@@ -81,9 +81,13 @@ def _parse_param_type(ptype):
     type_map = {
         "string":       'string',
         "integer":      'int',
+        "number":       'int',
         "boolean":      'bool',
         "list<string>": '[]string',
         "list[string]": '[]string',
+        "string array": '[]string',
+        "timestamp":    'time',
+        "enumerated":   'enum',
     }
 
     l = ptype.lower()
@@ -91,6 +95,10 @@ def _parse_param_type(ptype):
         return type_map[l]
 
     m = re.match("^list\[object:", l)
+    if m:
+        return "[]%s" % ptype[m.end():][:-1]
+
+    m = re.match("^\[object:", l)
     if m:
         return "[]%s" % ptype[m.end():][:-1]
 

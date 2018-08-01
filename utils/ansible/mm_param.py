@@ -68,7 +68,7 @@ class Basic(object):
         keys.insert(0, "name")
         keys.insert(1, "description")
 
-        r = ["%s- %s\n" % (' '*indent, self._mm_type)]
+        r = ["%s- %s\n" % (' ' * indent, self._mm_type)]
         indent += 2
         for k in keys:
             v = self._items[k]
@@ -143,6 +143,31 @@ class MMBoolean(Basic):
         self._mm_type = "!ruby/object:Api::Type::Boolean"
 
 
+class MMTime(Basic):
+    def __init__(self, param):
+        super(MMTime, self).__init__(param)
+        self._mm_type = "!ruby/object:Api::Type::Time"
+
+
+class MMEnum(Basic):
+    def __init__(self, param, values=[]):
+        super(MMEnum, self).__init__(param)
+        self._mm_type = "!ruby/object:Api::Type::Enum"
+
+        self._items["values"] = {
+            "value": values,
+            "yaml": self._values_yaml,
+        }
+
+    @staticmethod
+    def _values_yaml(indent, k, v):
+        r = ["%s%s:\n" % (' ' * indent, k)]
+        indent += 2
+        for i in v:
+            r.append("%s- :%s\n" % (' ' * indent, str(i)))
+        return "".join(r)
+
+
 class MMNestedObject(Basic):
     def __init__(self, param, struct, all_structs):
         super(MMNestedObject, self).__init__(param)
@@ -160,6 +185,7 @@ class MMNestedObject(Basic):
         indent += 2
         for k1 in keys:
             r.extend(v[k1].to_yaml(indent))
+        return "".join(r)
 
     def __getattr__(self, key):
         p = self._items["properties"]["value"]
@@ -169,7 +195,7 @@ class MMNestedObject(Basic):
         return super(MMArray, self).__getattr__(key)
 
     def merge(self, other, callback):
-        super(MMNestedObject, self).merge(other)
+        super(MMNestedObject, self).merge(other, callback)
 
         if not isinstance(other, MMNestedObject):
             return
@@ -180,7 +206,7 @@ class MMNestedObject(Basic):
             if k not in self_properties:
                 self_properties[k] = v
             else:
-                callback(v, self_properties[k])
+                self_properties[k].merge(v, callback)
 
         for k, v in self_properties.items():
             if k not in other_properties:
@@ -215,16 +241,17 @@ class MMArray(Basic):
     @staticmethod
     def _item_type_yaml(indent, k, v):
         if isinstance(v, str):
-            return ["%s%s: %s\n" % (' ' * indent, k, v)]
+            return "%s%s: %s\n" % (' ' * indent, k, v)
 
         r = [
             "%s%s: !ruby/object:Api::Type::NestedObject\n" % (' ' * indent, k),
-            "%sproperties:\n" % ' ' * (indent + 2)
+            "%sproperties:\n" % (' ' * (indent + 2))
         ]
         keys = sorted(v.keys())
         indent += 4
         for k1 in keys:
             r.extend(v[k1].to_yaml(indent))
+        return "".join(r)
 
     def __getattr__(self, key):
         item_type = self._items["item_type"]["value"]
@@ -234,18 +261,20 @@ class MMArray(Basic):
         return super(MMArray, self).__getattr__(key)
 
     def merge(self, other, callback):
-        super(MMArray, self).merge(other)
+        super(MMArray, self).merge(other, callback)
 
         if not isinstance(other, MMArray):
             return
 
         self_item_type = self._items["item_type"]["value"]
+        if isinstance(self_item_type, str):
+            return
         other_item_type = other.get_item("item_type")
         for k, v in other_item_type.items():
             if k not in self_item_type:
                 self_item_type[k] = v
             else:
-                callback(v, self_item_type[k])
+                self_item_type[k].merge(v, callback)
 
         for k, v in self_item_type.items():
             if k not in other_item_type:
@@ -255,7 +284,9 @@ class MMArray(Basic):
 _mm_type_map = {
     "string": MMString,
     "bool": MMBoolean,
-    "int": MMInteger
+    "int": MMInteger,
+    "time": MMTime,
+    "enum": MMEnum,
 }
 
 
@@ -266,7 +297,7 @@ def build(struct, all_structs):
         if ptype in _mm_type_map:
             r[name] = _mm_type_map[ptype](p)
         elif ptype in all_structs:
-            r[name] = MMNestedObject(all_structs[ptype], all_structs)
+            r[name] = MMNestedObject(p, all_structs[ptype], all_structs)
         elif ptype.find("[]") == 0:
             r[name] = MMArray(p, all_structs)
         else:

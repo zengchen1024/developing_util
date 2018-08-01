@@ -21,7 +21,7 @@ def run(resource_name, doc_dir, output):
     indent = 4
     if parameters:
         yaml_str.append("%sparameters:\n" % (' ' * indent))
-        yaml_str.extend(_generate_yaml(parameters, indent + 2))
+        yaml_str = _generate_yaml(parameters, indent + 2)
 
     yaml_str.append("\n%sproperties:\n" % (' ' * indent))
     yaml_str.extend(_generate_yaml(properties, indent + 2))
@@ -101,7 +101,7 @@ def build_mm_params(resource_name, doc_dir):
                 "The struct name of update request should be \'update\'")
         r = mm_param.build(struct, structs)
         for k, v in r.items():
-            v.set_item("update_update", 'u')
+            v.set_item("create_update", 'u')
             if k in properties:
                 properties[k].merge(v, _update_merge_get)
             else:
@@ -112,23 +112,28 @@ def build_mm_params(resource_name, doc_dir):
 
 def _create_merge_get(pc, pg):
     if pc is None:
-        pg.set_item("output", None)
+        pg.set_item("output", True)
     elif pc and pg:
         pg.set_item("output", None)
         pg.set_item("required", pc.get_item("required"))
-        pg.set_item("create_update", 'c')
+        pg.set_item("description", pc.get_item("description"))
+        # only the top layer should set this config
+        if pc.get_item("create_update") is not None:
+            pg.set_item("create_update", 'c')
 
 
 def _update_merge_get(pu, pg):
     if pu is None:
-        pg.set_item("output", None)
+        pg.set_item("output", True)
     elif pu and pg:
         pg.set_item("output", None)
-        cu = pg.get_item("create_update")
-        if cu is None:
-            cu = ''
-        cu += 'u'
-        pg.set_item("create_update", cu)
+        # only the top layer should set this config
+        if pu.get_item("create_update") is not None:
+            cu = pg.get_item("create_update")
+            if cu is None:
+                cu = ''
+            cu += 'u'
+            pg.set_item("create_update", cu)
 
 
 if __name__ == "__main__":
