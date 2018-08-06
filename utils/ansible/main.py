@@ -1,5 +1,6 @@
 import os
 import sys
+import yaml
 
 from convert_word_doc import word_to_params
 import mm_param
@@ -16,6 +17,8 @@ def run(resource_name, doc_dir, output):
         return r
 
     properties, parameters = build_mm_params(resource_name, doc_dir)
+
+    _change_by_config(doc_dir, parameters, properties)
 
     yaml_str = []
     indent = 4
@@ -87,7 +90,7 @@ def build_mm_params(resource_name, doc_dir):
     for k, v in r.items():
         v.set_item("create_update", 'c')
         if k in properties:
-            properties[k].merge(v, _create_merge_get)
+            properties[k].merge(v, _create_merge_to_get)
         else:
             v.set_item("input", True)
             parameters[k] = v
@@ -103,14 +106,14 @@ def build_mm_params(resource_name, doc_dir):
         for k, v in r.items():
             v.set_item("create_update", 'u')
             if k in properties:
-                properties[k].merge(v, _update_merge_get)
+                properties[k].merge(v, _update_merge_to_get)
             else:
                 parameters[k] = v
 
     return properties, parameters
 
 
-def _create_merge_get(pc, pg):
+def _create_merge_to_get(pc, pg):
     if pc is None:
         pg.set_item("output", True)
     elif pc and pg:
@@ -122,7 +125,7 @@ def _create_merge_get(pc, pg):
             pg.set_item("create_update", 'c')
 
 
-def _update_merge_get(pu, pg):
+def _update_merge_to_get(pu, pg):
     if pu is None:
         pg.set_item("output", True)
     elif pu and pg:
@@ -134,6 +137,77 @@ def _update_merge_get(pu, pg):
                 cu = ''
             cu += 'u'
             pg.set_item("create_update", cu)
+
+
+def _change_by_config(doc_dir, parameters, properties):
+
+    def _find_param(k):
+        keys = k.split('.')
+
+        k0 = keys[0]
+        obj = properties.get(k0)
+        if obj is None:
+            obj = parameters.get(k0)
+            if obj is None:
+                print("Can not find the head parameter(%s)" % k0)
+                return None, ''
+
+        n = len(keys)
+        try:
+            for i in range(1, n):
+                 obj = getattr(obj, keys[i])
+        except AttributeError as ex:
+            print("Can not find the parameter(%s)" % keys[i])
+            return None, ''
+
+        return obj, keys[-1]
+
+    f = doc_dir + "api_cnf.yaml"
+    if not os.path.exists(f):
+        return
+
+    cnf = None
+    with open(f, 'r') as stream:
+        try:
+            cnf = yaml.load(stream)
+        except Exception as ex:
+            raise Exception("Read %s failed, err=%s" % (f, ex))
+    if cnf is None:
+        return
+
+    for k, v in cnf.get('fields', {}).items():
+        if not k:
+            continue
+        obj, pn = _find_param(k)
+        if obj:
+            obj.set_item("field", pn)
+            obj.set_item("name", v)
+
+    for k, v in cnf.get('enum_values', {}).items():
+        if not k:
+            continue
+        obj, pn = _find_param(k)
+        if not obj:
+            continue
+        if not isinstance(obj, mm_param.MMEnum):
+            print("Can not set values for a non enum(%s) parameter(%s)" %
+                  (type(obj), pn))
+            continue
+
+        obj.set_item("values", map(str.strip, v.strip(', ').split(',')))
+
+    rid = cnf.get("resource_id")
+    if rid:
+        obj, _ = _find_param(rid)
+        if obj:
+            obj.set_item("is_id", True)
+
+    cu = "create_update"
+    for i in cnf.get('exclude_create', []):
+        obj, _ = _find_param(i)
+        if obj:
+            obj.set_item(
+                cu, 'u' if obj.get_item(cu, '').find('u') >= 0 else None)
 
 
 if __name__ == "__main__":

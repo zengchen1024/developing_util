@@ -41,7 +41,7 @@ def word_to_params(file_name):
             try:
                 r = ParamDef(
                     items[0],
-                    items[1].lower(),
+                    items[1].lower() if items[1] else 'no',
                     _parse_param_type(items[2]),
                     items[3].replace("\n", " "),
                 )
@@ -88,6 +88,7 @@ def _parse_param_type(ptype):
         "string array": '[]string',
         "timestamp":    'time',
         "enumerated":   'enum',
+        "enum":         'enum',
     }
 
     l = ptype.lower()

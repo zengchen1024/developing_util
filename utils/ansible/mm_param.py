@@ -58,6 +58,10 @@ class Basic(object):
                 "yaml": None,
             },
 
+            "is_id": {
+                "value": None,
+                "yaml": lambda n, k, v: self._indent(n, k, str(v).lower()),
+            },
         }
 
     def to_yaml(self, indent):
@@ -92,8 +96,8 @@ class Basic(object):
         if k in self._items:
             self._items[k]["value"] = v
 
-    def get_item(self, k):
-        return self._items[k]["value"] if k in self._items else None
+    def get_item(self, k, default=None):
+        return self._items[k]["value"] if k in self._items else default
 
     def merge(self, other, callback):
         if type(self) != type(other):
