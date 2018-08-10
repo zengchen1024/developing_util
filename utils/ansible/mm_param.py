@@ -101,8 +101,8 @@ class Basic(object):
 
     def merge(self, other, callback):
         if type(self) != type(other):
-            print("merge on different type:%s <--> %s\n" %
-                  (type(self), type(other)))
+            print("merge(%s) on different type:%s <--> %s\n" %
+                  (self._items['name']['value'], type(self), type(other)))
         else:
             callback(other, self)
 
@@ -163,6 +163,23 @@ class MMTime(Basic):
     def __init__(self, param):
         super(MMTime, self).__init__(param)
         self._mm_type = "!ruby/object:Api::Type::Time"
+
+
+class MMNameValues(Basic):
+    def __init__(self, param):
+        super(MMNameValues, self).__init__(param)
+        self._mm_type = "!ruby/object:Api::Type::NameValues"
+
+        self._items.update({
+            "key_type": {
+                "value": "Api::Type::String",
+                "yaml": lambda n, k, v: self._indent(n, k, v),
+            },
+            "value_type": {
+                "value": "Api::Type::String",
+                "yaml": lambda n, k, v: self._indent(n, k, v),
+            }
+        })
 
 
 class MMEnum(Basic):
@@ -321,6 +338,7 @@ _mm_type_map = {
     "int": MMInteger,
     "time": MMTime,
     "enum": MMEnum,
+    "map": MMNameValues,
 }
 
 

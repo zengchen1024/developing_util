@@ -90,6 +90,7 @@ def _parse_param_type(ptype):
         "time":         'time',
         "enumerated":   'enum',
         "enum":         'enum',
+        "map":          'map',
     }
 
     l = ptype.strip().lower()
