@@ -43,7 +43,7 @@ def word_to_params(file_name):
                     items[0],
                     items[1].lower() if items[1] else 'no',
                     _parse_param_type(items[2]),
-                    items[3].replace("\n", " "),
+                    items[3].strip("\n"),
                 )
                 t[items[0]] = r
             except Exception as ex:
@@ -87,11 +87,12 @@ def _parse_param_type(ptype):
         "list[string]": '[]string',
         "string array": '[]string',
         "timestamp":    'time',
+        "time":         'time',
         "enumerated":   'enum',
         "enum":         'enum',
     }
 
-    l = ptype.lower()
+    l = ptype.strip().lower()
     if l in type_map:
         return type_map[l]
 

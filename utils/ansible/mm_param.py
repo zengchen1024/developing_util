@@ -110,23 +110,32 @@ class Basic(object):
         if indent + len(k) + len(v) + 4 < 80:
             return self._indent(indent, k, "\"%s\"" % v)
 
-        r = ["%s%s: |\n" % (' ' * indent, k)]
-        indent += 2
+        def _paragraph_yaml(p, indent, max_len):
+            r = []
+            s1 = p
+            while len(s1) > max_len:
+                # +1, because maybe the s1[max_len] == ' '
+                i = s1.rfind(" ", 0, max_len + 1)
+                s2, s1 = (s1[:max_len], s1[max_len:]) if i == -1 else (
+                    s1[:i], s1[(i + 1):])
+                r.append("%s%s\n" % (' ' * indent, s2))
+            if s1:
+                r.append("%s%s\n" % (' ' * indent, s1))
 
+            return "".join(r)
+
+        result = ["%s%s: |\n" % (' ' * indent, k)]
+        indent += 2
         max_len = 79 - indent
         if max_len < 20:
             max_len = 20
-        s1 = v
-        while len(s1) > max_len:
-            # +1, because maybe the s1[max_len] == ' '
-            i = s1.rfind(" ", 0, max_len + 1)
-            s2, s1 = (s1[:max_len], s1[max_len:]) if i == -1 else (
-                s1[:i], s1[(i + 1):])
-            r.append("%s%s\n" % (' ' * indent, s2))
-        if s1:
-            r.append("%s%s\n" % (' ' * indent, s1))
 
-        return "".join(r)
+        for p in v.split("\n"):
+            result.append(_paragraph_yaml(p, indent, max_len))
+            result.append("\n")
+
+        result.pop()
+        return "".join(result)
 
 
 class MMString(Basic):
