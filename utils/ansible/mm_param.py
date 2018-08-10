@@ -106,6 +106,9 @@ class Basic(object):
         else:
             callback(other, self)
 
+    def traverse(self, callback):
+        callback(self)
+
     def _desc_yaml(self, indent, k, v):
         if indent + len(k) + len(v) + 4 < 80:
             return self._indent(indent, k, "\"%s\"" % v)
@@ -231,6 +234,12 @@ class MMNestedObject(Basic):
             if k not in other_properties:
                 callback(None, v)
 
+    def traverse(self, callback):
+        callback(self)
+
+        for k, v in self._items["properties"]["value"].items():
+            v.traverse(callback)
+
 
 class MMArray(Basic):
     def __init__(self, param, all_structs):
@@ -298,6 +307,12 @@ class MMArray(Basic):
         for k, v in self_item_type.items():
             if k not in other_item_type:
                 callback(None, v)
+
+    def traverse(self, callback):
+        callback(self)
+
+        for k, v in self._items["item_type"]["value"].items():
+            v.traverse(callback)
 
 
 _mm_type_map = {

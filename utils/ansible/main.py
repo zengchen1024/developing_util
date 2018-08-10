@@ -1,3 +1,4 @@
+import functools
 import os
 import sys
 import yaml
@@ -6,7 +7,7 @@ from convert_word_doc import word_to_params
 import mm_param
 
 
-def run(resource_name, doc_dir, output):
+def run(doc_dir, output):
 
     def _generate_yaml(params, n):
         r = []
@@ -19,7 +20,7 @@ def run(resource_name, doc_dir, output):
     if doc_dir[-1] != "/":
         doc_dir += "/"
 
-    properties, parameters = build_mm_params(resource_name, doc_dir)
+    properties, parameters = build_mm_params(doc_dir)
 
     _change_by_config(doc_dir, parameters, properties)
 
@@ -42,10 +43,10 @@ def run(resource_name, doc_dir, output):
             o.close()
 
 
-def build_mm_params(resource_name, doc_dir):
+def build_mm_params(doc_dir):
 
     structs = word_to_params(doc_dir + "get.docx")
-    struct = structs.get(resource_name)
+    struct = structs.get('get_rsp')
     if struct is None:
         raise Exception(
             "The struct name of get response should be \'get_rsp\'")
@@ -163,6 +164,31 @@ def _change_by_config(doc_dir, parameters, properties):
 
         return obj, keys[-1]
 
+    def _config_fields(p, pn, v):
+        p.set_item("field", pn)
+        p.set_item("name", v)
+
+    def _config_values(p, pn, v):
+        if not isinstance(p, mm_param.MMEnum):
+            print("Can not set values for a non enum(%s) parameter(%s)" %
+                  (type(p), pn))
+        else:
+            p.set_item("values", map(str.strip, v.strip(', ').split(',')))
+
+    def _config_element_type(p, pn, v):
+        if not isinstance(p, mm_param.MMEnum):
+            print("Can not set values for a non enum(%s) parameter(%s)" %
+                  (type(p), pn))
+        else:
+            p.set_item("element_type", v)
+
+    def _config_create_update(p, pn, v):
+        if v not in ['c', 'u', 'cu', None]:
+            print("The value of 'create_update' "
+                  "should be in ['c', 'u', 'cu', None]")
+            return
+        p.set_item('create_update', v)
+
     f = doc_dir + "api_cnf.yaml"
     if not os.path.exists(f):
         print("The path(%s) is not correct" % f)
@@ -177,48 +203,58 @@ def _change_by_config(doc_dir, parameters, properties):
     if cnf is None:
         return
 
-    for k, v in cnf.get('fields', {}).items():
-        if not k:
-            continue
-        obj, pn = _find_param(k)
-        if obj:
-            obj.set_item("field", pn)
-            obj.set_item("name", v)
+    fields = {}
 
-    for k, v in cnf.get('enum_values', {}).items():
-        if not k:
+    fm = {
+        'field': _config_fields,
+        'is_id': lambda p, pn, v: p.set_item("is_id", True),
+        'create_update': _config_create_update,
+        'values': _config_values,
+        'element_type': _config_element_type,
+    }
+    for p, kv in cnf.items():
+        if not p:
             continue
-        obj, pn = _find_param(k)
+        p = p.strip()
+        obj, pn = _find_param(p)
         if not obj:
             continue
-        if not isinstance(obj, mm_param.MMEnum):
-            print("Can not set values for a non enum(%s) parameter(%s)" %
-                  (type(obj), pn))
+        for k, v in kv.items():
+            if k in fm:
+                fm[k](obj, pn, v)
+                if k == 'field':
+                    fields[p] = v
+            else:
+                print("Config unknown property(%s) for "
+                      "parameter(%s)" % (k, pn))
+
+    def _replace_desc(p, old, new):
+        desc = p.get_item("description")
+        if desc.find(old) >= 0:
+            p.set_item("description", desc.replace(old, new))
+
+    for p, new in fields.items():
+        if new == "name": # 'name' is not a specical parameter, ignore it.
             continue
 
-        obj.set_item("values", map(str.strip, v.strip(', ').split(',')))
+        i = p.rfind('.')
+        if i > 0:
+            obj, pn = _find_param(p[:i])
+            if not obj:
+                continue
+            f = functools.partial(_replace_desc, old=p[i+1:], new=new)
+            obj.traverse(f)
+        else:
+            f = functools.partial(_replace_desc, old=p, new=new)
+            for _, obj in parameters.items():
+                obj.traverse(f)
 
-    rid = cnf.get("resource_id")
-    if rid:
-        obj, _ = _find_param(rid)
-        if obj:
-            obj.set_item("is_id", True)
-
-    cu = "create_update"
-    for i in cnf.get('exclude_create', []):
-        obj, _ = _find_param(i)
-        if obj:
-            obj.set_item(
-                cu, 'u' if obj.get_item(cu, '').find('u') >= 0 else None)
-
-    for k, v in cnf.get('enum_element_type', {}).items():
-        obj, _ = _find_param(k)
-        if obj:
-            obj.set_item("element_type", v)
+            for _, obj in properties.items():
+                obj.traverse(f)
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 4:
-        print("Input resource name, docx dir and output file")
+    if len(sys.argv) != 3:
+        print("Input docx dir and output file")
     else:
         run(*sys.argv[1:])
