@@ -16,6 +16,9 @@ def run(resource_name, doc_dir, output):
             r.extend(v.to_yaml(n))
         return r
 
+    if doc_dir[-1] != "/":
+        doc_dir += "/"
+
     properties, parameters = build_mm_params(resource_name, doc_dir)
 
     _change_by_config(doc_dir, parameters, properties)
@@ -40,8 +43,6 @@ def run(resource_name, doc_dir, output):
 
 
 def build_mm_params(resource_name, doc_dir):
-    if doc_dir[-1] != "/":
-        doc_dir += "/"
 
     structs = word_to_params(doc_dir + "get.docx")
     struct = structs.get(resource_name)
@@ -164,6 +165,7 @@ def _change_by_config(doc_dir, parameters, properties):
 
     f = doc_dir + "api_cnf.yaml"
     if not os.path.exists(f):
+        print("The path(%s) is not correct" % f)
         return
 
     cnf = None
@@ -208,6 +210,11 @@ def _change_by_config(doc_dir, parameters, properties):
         if obj:
             obj.set_item(
                 cu, 'u' if obj.get_item(cu, '').find('u') >= 0 else None)
+
+    for k, v in cnf.get('enum_element_type', {}).items():
+        obj, _ = _find_param(k)
+        if obj:
+            obj.set_item("element_type", v)
 
 
 if __name__ == "__main__":

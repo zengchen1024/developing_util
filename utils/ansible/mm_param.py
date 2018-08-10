@@ -158,10 +158,16 @@ class MMEnum(Basic):
         super(MMEnum, self).__init__(param)
         self._mm_type = "!ruby/object:Api::Type::Enum"
 
-        self._items["values"] = {
-            "value": values,
-            "yaml": self._values_yaml,
-        }
+        self._items.update({
+            "values": {
+                "value": values,
+                "yaml": self._values_yaml,
+            },
+            "element_type": {
+                "value": None,
+                "yaml": lambda n, k, v: self._indent(n, k, v),
+            }
+        })
 
     @staticmethod
     def _values_yaml(indent, k, v):
