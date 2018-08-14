@@ -101,8 +101,8 @@ class Basic(object):
 
     def merge(self, other, callback):
         if type(self) != type(other):
-            print("merge(%s) on different type:%s <--> %s\n" %
-                  (self._items['name']['value'], type(self), type(other)))
+            print("merge(%s) on different type:%s ->->->- %s\n" %
+                  (self._items['name']['value'], type(other), type(self)))
         else:
             callback(other, self)
 
@@ -314,6 +314,7 @@ class MMArray(Basic):
         self_item_type = self._items["item_type"]["value"]
         if isinstance(self_item_type, str):
             return
+
         other_item_type = other.get_item("item_type")
         for k, v in other_item_type.items():
             if k not in self_item_type:
@@ -328,7 +329,11 @@ class MMArray(Basic):
     def traverse(self, callback):
         callback(self)
 
-        for k, v in self._items["item_type"]["value"].items():
+        self_item_type = self._items["item_type"]["value"]
+        if isinstance(self_item_type, str):
+            return
+
+        for k, v in self_item_type.items():
             v.traverse(callback)
 
 

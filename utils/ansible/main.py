@@ -1,5 +1,6 @@
 import functools
 import os
+import re
 import sys
 import yaml
 
@@ -28,7 +29,7 @@ def run(doc_dir, output):
     indent = 4
     if parameters:
         yaml_str.append("%sparameters:\n" % (' ' * indent))
-        yaml_str = _generate_yaml(parameters, indent + 2)
+        yaml_str.extend(_generate_yaml(parameters, indent + 2))
 
     yaml_str.append("\n%sproperties:\n" % (' ' * indent))
     yaml_str.extend(_generate_yaml(properties, indent + 2))
@@ -87,6 +88,7 @@ def build_mm_params(doc_dir):
     if struct is None:
         raise Exception(
             "The struct name of create request should be \'create\'")
+    print("------ start to merge create parameters to get ------")
     r = mm_param.build(struct, structs)
     parameters = {}
     for k, v in r.items():
@@ -104,6 +106,7 @@ def build_mm_params(doc_dir):
         if struct is None:
             raise Exception(
                 "The struct name of update request should be \'update\'")
+        print("------ start to merge update parameters to get ------")
         r = mm_param.build(struct, structs)
         for k, v in r.items():
             v.set_item("create_update", 'u')
@@ -211,6 +214,7 @@ def _change_by_config(doc_dir, parameters, properties):
         'create_update': _config_create_update,
         'values': _config_values,
         'element_type': _config_element_type,
+        'exclude': lambda p, pn, v: p.set_item("exclude", True),
     }
     for p, kv in cnf.items():
         if not p:
@@ -230,8 +234,9 @@ def _change_by_config(doc_dir, parameters, properties):
 
     def _replace_desc(p, old, new):
         desc = p.get_item("description")
-        if desc.find(old) >= 0:
-            p.set_item("description", desc.replace(old, new))
+        pt = re.compile("\\b%s\\b" % old)
+        if re.findall(pt, desc):
+            p.set_item("description", re.sub(pt, new, desc))
 
     for p, new in fields.items():
         if new == "name": # 'name' is not a specical parameter, ignore it.
