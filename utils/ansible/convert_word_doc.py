@@ -80,6 +80,7 @@ def _check_param_name_of_table(struct):
 def _parse_param_type(ptype):
     type_map = {
         "string":       'string',
+        "uuid":         'string',
         "integer":      'int',
         "number":       'int',
         "boolean":      'bool',
