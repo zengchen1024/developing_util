@@ -34,12 +34,12 @@ layout: "$dest_cloud"
 page_title: "$dest_cloud_u: $resource"
 sidebar_current: "docs-${dest_cloud}-resource-$resource1"
 description: |-
-  Manages resource within
+  Manages {{ resource desc }} resource within ${dest_cloud_u}.
 ---
 
 # $resource2
 
-Manages resource within
+Manages {{ resource desc }} resource within ${dest_cloud_u}
 
 ## Example Usage
 

@@ -34,14 +34,21 @@ def run(doc_dir, output):
     _change_by_config(doc_dir, parameters, properties)
 
     if parameters:
-        properties.update(parameters)
+        parameters.update(properties)
+    else:
+        parameters = properties
 
-    ps = {k: v for k, v in properties.items() if v.get_item('create_update')}
+    ps = {k: v for k, v in parameters.items() if v.get_item('create_update')}
     yaml_str = _generate_schema(ps)
 
-    yaml_str.append("\n# Attributes Reference\n\n"
+    yaml_str.append("\n## Attributes Reference\n\n"
                     "In addition to all arguments above, the following "
-                    "attributes are exported:\n")
+                    "attributes are exported:\n\n")
+
+    for k, v in properties.items():
+        if v.get_item('create_update'):
+            yaml_str.append(
+                "* `%s` - See Argument Reference above.\n" % v.param_name)
 
     ps = {
         k: v for k, v in properties.items() if not v.get_item('create_update')}

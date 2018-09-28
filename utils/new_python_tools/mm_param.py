@@ -64,6 +64,10 @@ class Basic(object):
     def get_item(self, k, default=None):
         return self._items[k]["value"] if k in self._items else default
 
+    @property
+    def param_name(self):
+        return self._param_name
+
     def merge(self, other, callback):
         if type(self) != type(other):
             print("merge(%s) on different type:%s ->->->- %s\n" %
