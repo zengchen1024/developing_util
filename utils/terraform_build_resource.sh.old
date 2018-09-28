@@ -23,13 +23,14 @@ test $? -ne 0 && echo "can not find cloud name: $dest_cloud_alias" && exit 1
 dest_cloud_u=$($get_config name_of_upper $dest_cloud_alias)
 code_home_dir=$($get_config code_dir $dest_cloud_alias)
 
-sdk_dir=$(get_file_relative_path $2 $code_home_dir/vendor/)
+sdk_dir="$($get_config cloud_golangsdk_dir $dest_cloud_alias)/openstack/$2"
+
 api_doc_dir=$3
 
 resource_name=$(echo $4 | awk -F ':' '{print $1}')
 child_resource_name=$(echo $4 | awk -F ':' '{print $2}')
 
-resource_go_file=$(pwd)/$5
+resource_go_file=$code_home_dir/$dest_cloud/$5
 resource_version=$(capitalize $6)
 
 if [ $# -le 6 ]; then
@@ -44,6 +45,17 @@ fi
 
 # ----------------------------------------------------------- #
 sdk_dir_name=$(basename $sdk_dir)
+
+req_go_file=$sdk_dir/requests.go
+if [ ! -f $req_go_file ]; then
+    echo $req_go_file "not exist" && exit 1
+fi
+req_struct_names=$(grep "type [a-zA-Z0-9_]* struct {" $req_go_file | awk '{print $2}')
+
+resp_go_file=$sdk_dir/results.go
+if [ -f $resp_go_file ]; then
+    resp_struct_names=$(grep "type [a-zA-Z0-9_]* struct {" $resp_go_file | awk '{print $2}')
+fi
 
 resource_go_file=$(pre_treat_old_file $treat_old_file $resource_go_file)
 
@@ -63,8 +75,6 @@ method_prefix=resource${resource_name}${child_resource_name}${resource_version}
 (
 cat << EOF
 package $dest_cloud
-
-import "${sdk_dir}"
 
 func ${method_prefix}() *schema.Resource {
 	return &schema.Resource{
@@ -93,10 +103,11 @@ EOF
 ) > $resource_go_file
 
 
-generator=$tool_dir/new_python_tools/generate_resource_schema.py
+generator=$tool_dir/python_tools/convert_to_schema.py
 
-err=$(python $generator $api_doc_dir $resource_go_file)
-test $? -ne 0 && echo "generate resource schema failed: $err" && exit 1
+err=$(python $generator $child_resource_name $resource_go_file $sdk_dir $api_doc_dir "$req_struct_names" "$resp_struct_names")
+test $? -ne 0 && echo "generate resource codes failed: $err" && exit 1
+test ${#err} -gt 0 && echo $err
 
 
 # generate methods

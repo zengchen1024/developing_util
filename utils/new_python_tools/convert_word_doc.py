@@ -8,6 +8,12 @@ ParamDef = namedtuple("ParamDef", ["name", "mandatory", "ptype", "desc"])
 
 def word_to_params(file_name):
 
+    mandatory = None
+    for n in ["get.docx", "create_rsp.docx", "update_rsp.docx"]:
+        if file_name.find(n) >=0:
+            mandatory = "no"
+            break
+
     tables = {}
     doc = docx.Document(file_name)
 
@@ -39,9 +45,13 @@ def word_to_params(file_name):
                 ]
 
             try:
+                m = mandatory
+                if m is None:
+                    m = items[1].lower() if items[1] else 'no'
+
                 r = ParamDef(
                     items[0],
-                    items[1].lower() if items[1] else 'no',
+                    m,
                     _parse_param_type(items[2]),
                     items[3].strip("\n"),
                 )
