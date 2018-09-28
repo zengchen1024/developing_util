@@ -1,12 +1,10 @@
 #!/bin/bash
 
-if [ $# -lt 5 ]; then
+if [ $# -lt 3 ]; then
 	echo "usage: $0"
 	echo "      dest_cloud_name"
 	echo "      api_doc_dir"
-	echo "      resource_name(the name's first character should be capital)"
 	echo "      resource_go_file"
-	echo "      doc_file_name"
 	exit 1
 fi
 
@@ -21,13 +19,14 @@ test $? -ne 0 && echo "can not find cloud name: $dest_cloud_alias" && exit 1
 dest_cloud_u=$($get_config name_of_upper $dest_cloud_alias)
 code_home_dir=$($get_config code_dir $dest_cloud_alias)
 
-resouce_go_file_name=$(basename $4 | awk -F '.' '{print $1}')
+resouce_go_file_name=$(basename $3 | awk -F '.' '{print $1}')
 resource=$(echo ${resouce_go_file_name#resource_})
-resource1=$(echo ${resource#${dest_cloud}_})
-resource1=$(echo ${resource1//_/-})
+resource0=$(echo ${resource#${dest_cloud}_})
+resource1=$(echo ${resource0//_/-})
 resource2=$(echo ${resource//_/\\_})
 
-out_file=${code_home_dir}/website/docs/r/$5
+echo $resouce_go_file_name $resource $resource0 $resource1 $resource2
+out_file=${code_home_dir}/website/docs/r/${resource0}.html.markdown
 
 cat > $out_file << EOF
 layout: "$dest_cloud"
