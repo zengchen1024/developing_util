@@ -29,6 +29,7 @@ echo $resouce_go_file_name $resource $resource0 $resource1 $resource2
 out_file=${code_home_dir}/website/docs/r/${resource0}.html.markdown
 
 cat > $out_file << EOF
+---
 layout: "$dest_cloud"
 page_title: "$dest_cloud_u: $resource"
 sidebar_current: "docs-${dest_cloud}-resource-$resource1"
