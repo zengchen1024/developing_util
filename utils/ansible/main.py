@@ -35,13 +35,10 @@ def run(doc_dir, output):
     yaml_str.extend(_generate_yaml(properties, indent + 2))
 
     try:
-        o = open(output, "w")
-        o.writelines(yaml_str)
+        with open(output, "w") as o:
+            o.writelines(yaml_str)
     except Exception as ex:
         print("Write schema result failed, %s" % ex)
-    finally:
-        if o:
-            o.close()
 
 
 def build_mm_params(doc_dir):
