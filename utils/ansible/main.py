@@ -91,7 +91,7 @@ def build_mm_params(doc_dir):
     for k, v in r.items():
         v.set_item("create_update", 'c')
         if k in properties:
-            properties[k].merge(v, _create_merge_to_get)
+            properties[k].merge(v, _merge_create_to_get)
         else:
             v.set_item("input", True)
             parameters[k] = v
@@ -108,14 +108,16 @@ def build_mm_params(doc_dir):
         for k, v in r.items():
             v.set_item("create_update", 'u')
             if k in properties:
-                properties[k].merge(v, _update_merge_to_get)
+                properties[k].merge(v, _merge_update_to_get)
+            elif k in parameters:
+                parameters[k].merge(v, _merge_update_to_create)
             else:
                 parameters[k] = v
 
     return properties, parameters
 
 
-def _create_merge_to_get(pc, pg):
+def _merge_create_to_get(pc, pg):
     if pc is None:
         pg.set_item("output", True)
     elif pc and pg:
@@ -127,7 +129,7 @@ def _create_merge_to_get(pc, pg):
             pg.set_item("create_update", 'c')
 
 
-def _update_merge_to_get(pu, pg):
+def _merge_update_to_get(pu, pg):
     if pu is None:
         pg.set_item("output", True)
     elif pu and pg:
@@ -139,6 +141,19 @@ def _update_merge_to_get(pu, pg):
                 cu = ''
             cu += 'u'
             pg.set_item("create_update", cu)
+
+
+def _merge_update_to_create(pu, pc):
+    if pu and pc:
+        # only the top layer should set this config
+        if pu.get_item("create_update") is not None and (
+                pc.get_item("create_update") is not None):
+            pc.set_item("create_update", "cu")
+
+        elif not (pu.get_item("create_update") is None and (
+                pc.get_item("create_update") is None)):
+            print("run _merge_update_to_create on %s, impossible\n" %
+                  pu.get_item("name"))
 
 
 def _change_by_config(doc_dir, parameters, properties):
@@ -164,9 +179,11 @@ def _change_by_config(doc_dir, parameters, properties):
 
         return obj, keys[-1]
 
-    def _config_fields(p, pn, v):
-        p.set_item("field", pn)
+    def _config_name(p, pn, v):
         p.set_item("name", v)
+        # it shoud check first because it may conflict with 'field' config
+        if p.get_item("field") is None:
+            p.set_item("field", pn)
 
     def _config_values(p, pn, v):
         if not isinstance(p, mm_param.MMEnum):
@@ -206,12 +223,13 @@ def _change_by_config(doc_dir, parameters, properties):
     fields = {}
 
     fm = {
-        'field': _config_fields,
+        'name': _config_name,
         'is_id': lambda p, pn, v: p.set_item("is_id", True),
         'create_update': _config_create_update,
         'values': _config_values,
         'element_type': _config_element_type,
         'exclude': lambda p, pn, v: p.set_item("exclude", True),
+        'field': lambda p, pn, v: p.set_item("field", v),
     }
     for p, kv in cnf.items():
         if not p:

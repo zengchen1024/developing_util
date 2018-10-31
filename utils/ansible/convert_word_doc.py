@@ -83,10 +83,12 @@ def _parse_param_type(ptype):
         "uuid":         'string',
         "integer":      'int',
         "number":       'int',
+        "int":          'int',
         "boolean":      'bool',
         "list<string>": '[]string',
         "list[string]": '[]string',
         "string array": '[]string',
+        "[string]":     '[]string',
         "timestamp":    'time',
         "time":         'time',
         "enumerated":   'enum',
@@ -103,6 +105,10 @@ def _parse_param_type(ptype):
         return "[]%s" % ptype[m.end():][:-1]
 
     m = re.match("^\[object:", l)
+    if m:
+        return "[]%s" % ptype[m.end():][:-1]
+
+    m = re.match("^list<object:", l)
     if m:
         return "[]%s" % ptype[m.end():][:-1]
 

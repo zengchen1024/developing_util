@@ -243,12 +243,18 @@ class MMNestedObject(Basic):
         other_properties = other.get_item("properties")
         for k, v in other_properties.items():
             if k not in self_properties:
+                print("run %s on opt(%s), right is None\n" %
+                    (callback.__name__, v.get_item('name')))
+
                 self_properties[k] = v
             else:
                 self_properties[k].merge(v, callback)
 
         for k, v in self_properties.items():
             if k not in other_properties:
+                print("run %s on opt(%s), left is None\n" %
+                    (callback.__name__, v.get_item('name')))
+
                 callback(None, v)
 
     def traverse(self, callback):
@@ -318,12 +324,18 @@ class MMArray(Basic):
         other_item_type = other.get_item("item_type")
         for k, v in other_item_type.items():
             if k not in self_item_type:
+                print("run %s on opt(%s), right is None\n" %
+                    (callback.__name__, v.get_item('name')))
+
                 self_item_type[k] = v
             else:
                 self_item_type[k].merge(v, callback)
 
         for k, v in self_item_type.items():
             if k not in other_item_type:
+                print("run %s on opt(%s), left is None\n" %
+                    (callback.__name__, v.get_item('name')))
+
                 callback(None, v)
 
     def traverse(self, callback):
