@@ -62,7 +62,7 @@ else
 fi
 
 module_list_file='/tmp/modules.list'
-curl https://raw.githubusercontent.com/zengchen1024/terraform_developing_util/master/config/module_index.txt --create-dirs -o $module_list_file
+curl https://raw.githubusercontent.com/zengchen1024/developing_util/master/config/module_index.txt --create-dirs -o $module_list_file
 if [ $? -ne 0 ]; then
     echo "Dowload module index file failed"
     exit 1
@@ -72,7 +72,7 @@ if [ -z "$f" ]; then
     echo "Unknown provider name"
     exit 1
 fi
-curl https://raw.githubusercontent.com/zengchen1024/terraform_developing_util/master/config/$f --create-dirs -o $module_list_file
+curl https://raw.githubusercontent.com/zengchen1024/developing_util/master/config/$f --create-dirs -o $module_list_file
 if [ $? -ne 0 ]; then
     echo "Dowload module list file of $2 failed"
     exit 1

@@ -16,7 +16,7 @@ dest_cloud_alias=$2
 common_funcs="$(dirname $(which $0))/common.sh"
 . $common_funcs
 
-get_config="$(dirname $(which $0))/../config/get_config.sh"
+get_config="$(dirname $(which $0))/$config_exec"
 
 if [ -n "$dest_cloud_alias" ]; then
     dest_cloud=$($get_config name $dest_cloud_alias)

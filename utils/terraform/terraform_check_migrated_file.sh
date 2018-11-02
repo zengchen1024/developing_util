@@ -7,7 +7,7 @@ if [ $# -ne 2 ]; then
 	exit 1
 fi
 
-get_config="$(dirname $(which $0))/../config/get_config.sh"
+get_config="$(dirname $(which $0))/$config_exec"
 
 src_cloud_alias=$1
 src_cloud=$($get_config name $src_cloud_alias)

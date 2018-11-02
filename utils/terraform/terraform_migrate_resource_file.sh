@@ -16,7 +16,7 @@ fi
 
 cur_dir=$(pwd)
 
-get_config="$(dirname $(which $0))/../config/get_config.sh"
+get_config="$(dirname $(which $0))/$config_exec"
 
 . $(dirname $(which $0))/common.sh
 

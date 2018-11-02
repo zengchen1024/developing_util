@@ -46,3 +46,5 @@ fmt_go_file() {
     goimports -w $f
     gofmt -w $f
 }
+
+config_exec=../../config/get_config.sh

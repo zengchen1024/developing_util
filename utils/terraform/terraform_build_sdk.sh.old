@@ -16,7 +16,7 @@ fi
 tool_dir=$(dirname $(which $0))
 . $tool_dir/common.sh
 
-get_config="$(dirname $(which $0))/../config/get_config.sh"
+get_config="$(dirname $(which $0))/$config_exec"
 
 dest_cloud_alias=$1
 _=$($get_config name $dest_cloud_alias)

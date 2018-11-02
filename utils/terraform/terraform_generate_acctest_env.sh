@@ -5,7 +5,9 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-get_config="$(dirname $(which $0))/../config/get_config.sh"
+. "$(dirname $(which $0))/common.sh"$common_funcs
+
+get_config="$(dirname $(which $0))/$config_exec"
 
 dest_cloud_alias=$1
 name=$($get_config name $dest_cloud_alias)
