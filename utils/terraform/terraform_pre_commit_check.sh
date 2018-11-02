@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. "$(dirname $(which $0))/common.sh"
+
 get_config="$(dirname $(which $0))/$config_exec"
 
 cur_dir=$(pwd)

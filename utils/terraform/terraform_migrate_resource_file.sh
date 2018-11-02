@@ -16,9 +16,9 @@ fi
 
 cur_dir=$(pwd)
 
-get_config="$(dirname $(which $0))/$config_exec"
-
 . $(dirname $(which $0))/common.sh
+
+get_config="$(dirname $(which $0))/$config_exec"
 
 src_cloud_alias=$($get_config guess_cloud_alias $cur_dir)
 test $? -ne 0 && echo "change to the provider directory first" && exit 1

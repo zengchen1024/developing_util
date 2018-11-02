@@ -13,8 +13,7 @@ fi
 
 dest_cloud_alias=$2
 
-common_funcs="$(dirname $(which $0))/common.sh"
-. $common_funcs
+. "$(dirname $(which $0))/common.sh"
 
 get_config="$(dirname $(which $0))/$config_exec"
 

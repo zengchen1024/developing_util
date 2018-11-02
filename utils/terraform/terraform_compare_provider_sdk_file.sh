@@ -10,6 +10,7 @@ cd $(dirname $1)
 src=$(pwd)/$(basename $1)
 cd $cur_dir
 
+. "$(dirname $(which $0))/common.sh"
 get_config="$(dirname $(which $0))/$config_exec"
 
 src_cloud_alias=$($get_config guess_cloud_alias $(dirname $src))
