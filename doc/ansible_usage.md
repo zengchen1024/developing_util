@@ -1,7 +1,7 @@
 ## on Linux platform
 
 ### Install ansible
-1. curl https://raw.githubusercontent.com/zengchen1024/developing_util/master/utils/ansible_build_env.sh -o ansible_build_env.sh
+1. curl https://raw.githubusercontent.com/zengchen1024/developing_util/master/utils/ansible/ansible_build_env.sh -o ansible_build_env.sh
 2. chmod +x ansible_build_env.sh
 3. mkdir ansible
 4. ./ansible_build_env.sh ./ansible otc
