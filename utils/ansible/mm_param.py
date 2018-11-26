@@ -1,3 +1,12 @@
+Merge_Level = (
+    Merge_Level_Root,
+    Merge_Level_Child
+) = (
+    "root",
+    "child"
+)
+
+
 class Basic(object):
     def __init__(self, param):
         self._mm_type = ""
@@ -99,12 +108,12 @@ class Basic(object):
     def get_item(self, k, default=None):
         return self._items[k]["value"] if k in self._items else default
 
-    def merge(self, other, callback):
+    def merge(self, other, callback, level):
         if type(self) != type(other):
             print("merge(%s) on different type:%s ->->->- %s\n" %
                   (self._items['name']['value'], type(other), type(self)))
         else:
-            callback(other, self)
+            callback(other, self, level)
 
     def traverse(self, callback):
         callback(self)
@@ -233,8 +242,8 @@ class MMNestedObject(Basic):
 
         return super(MMArray, self).__getattr__(key)
 
-    def merge(self, other, callback):
-        super(MMNestedObject, self).merge(other, callback)
+    def merge(self, other, callback, level):
+        super(MMNestedObject, self).merge(other, callback, level)
 
         if not isinstance(other, MMNestedObject):
             return
@@ -246,16 +255,17 @@ class MMNestedObject(Basic):
                 print("run %s on opt(%s), right is None\n" %
                     (callback.__name__, v.get_item('name')))
 
+                callback(v, None, Merge_Level_Child)
                 self_properties[k] = v
             else:
-                self_properties[k].merge(v, callback)
+                self_properties[k].merge(v, callback, Merge_Level_Child)
 
         for k, v in self_properties.items():
             if k not in other_properties:
                 print("run %s on opt(%s), left is None\n" %
                     (callback.__name__, v.get_item('name')))
 
-                callback(None, v)
+                callback(None, v, Merge_Level_Child)
 
     def traverse(self, callback):
         callback(self)
@@ -311,8 +321,8 @@ class MMArray(Basic):
 
         return super(MMArray, self).__getattr__(key)
 
-    def merge(self, other, callback):
-        super(MMArray, self).merge(other, callback)
+    def merge(self, other, callback, level):
+        super(MMArray, self).merge(other, callback, level)
 
         if not isinstance(other, MMArray):
             return
@@ -327,16 +337,17 @@ class MMArray(Basic):
                 print("run %s on opt(%s), right is None\n" %
                     (callback.__name__, v.get_item('name')))
 
+                callback(v, None, Merge_Level_Child)
                 self_item_type[k] = v
             else:
-                self_item_type[k].merge(v, callback)
+                self_item_type[k].merge(v, callback, Merge_Level_Child)
 
         for k, v in self_item_type.items():
             if k not in other_item_type:
                 print("run %s on opt(%s), left is None\n" %
                     (callback.__name__, v.get_item('name')))
 
-                callback(None, v)
+                callback(None, v, Merge_Level_Child)
 
     def traverse(self, callback):
         callback(self)

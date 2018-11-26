@@ -50,7 +50,7 @@ def build_mm_params(doc_dir):
             "The struct name of get response should be \'get_rsp\'")
     properties = mm_param.build(struct, structs)
     for _, v in properties.items():
-        v.set_item("output", True)
+        v.traverse(lambda n: n.set_item("output", True))
 
     f = doc_dir + "create_rsp.docx"
     if os.path.exists(f):
@@ -89,9 +89,10 @@ def build_mm_params(doc_dir):
     r = mm_param.build(struct, structs)
     parameters = {}
     for k, v in r.items():
-        v.set_item("create_update", 'c')
+        v.traverse(lambda n: n.set_item("create_update", 'c'))
         if k in properties:
-            properties[k].merge(v, _merge_create_to_get)
+            properties[k].merge(v, _merge_create_to_get,
+                                mm_param.Merge_Level_Root)
         else:
             v.set_item("input", True)
             parameters[k] = v
@@ -106,54 +107,105 @@ def build_mm_params(doc_dir):
         print("------ start to merge update parameters to get ------")
         r = mm_param.build(struct, structs)
         for k, v in r.items():
-            v.set_item("create_update", 'u')
+            v.traverse(lambda n: n.set_item("create_update", 'u'))
             if k in properties:
-                properties[k].merge(v, _merge_update_to_get)
+                properties[k].merge(v, _merge_update_to_get,
+                                    mm_param.Merge_Level_Root)
             elif k in parameters:
-                parameters[k].merge(v, _merge_update_to_create)
+                parameters[k].merge(v, _merge_update_to_create,
+                                    mm_param.Merge_Level_Root)
             else:
                 parameters[k] = v
 
     return properties, parameters
 
 
-def _merge_create_to_get(pc, pg):
-    if pc is None:
-        pg.set_item("output", True)
-    elif pc and pg:
+def _merge_create_to_get(pc, pg, level):
+    if level == mm_param.Merge_Level_Root:
+        # on the case, pc and pg will exist both
+        # and pg is just the get parameter
+
         pg.set_item("output", None)
+        pg.set_item("create_update", 'c')
         pg.set_item("required", pc.get_item("required"))
         pg.set_item("description", pc.get_item("description"))
-        # only the top layer should set this config
-        if pc.get_item("create_update") is not None:
+
+    else:
+        # there are 3 cases of parameter type: c / g / cg
+
+        # if pg is None:
+        #     pc.set_item("create_update", 'c')
+
+        # elif pc is None:
+        #     pg.set_item("output", True)
+
+        if pc and pg:
             pg.set_item("create_update", 'c')
+            pg.set_item("required", pc.get_item("required"))
+            pg.set_item("description", pc.get_item("description"))
 
 
-def _merge_update_to_get(pu, pg):
-    if pu is None:
-        pg.set_item("output", True)
-    elif pu and pg:
-        pg.set_item("output", None)
-        # only the top layer should set this config
-        if pu.get_item("create_update") is not None:
-            cu = pg.get_item("create_update")
-            if cu is None:
-                cu = ''
-            cu += 'u'
-            pg.set_item("create_update", cu)
+def _merge_update_to_get(pu, pcg, level):
+    if level == mm_param.Merge_Level_Root:
+        # on the case, pu and pcg will exist both
+
+        if pcg.get_item("create_update") is None:
+            # on this case, pcg is just the get parameter
+
+            pcg.set_item("output", None)
+            pcg.set_item("create_update", 'u')
+            pcg.set_item("description", pu.get_item("description"))
+
+        else:
+            # on this case, pcg is both the get/create parameter
+
+            pcg.set_item("create_update", 'cu')
+
+    else:
+        # on this case,
+        # there are 7 cases of parameter type: c / u / g / cu / ug / cg / cug
+        # pcg has two cases:
+        #  1. pcg is one of parameter set of get
+        #  2. pcg is one of parameter set of create/get
+
+        # if pcg is None:
+        #     pu.set_item("create_update", 'u')
+
+        # elif pu is None:
+        #     on this case pcg may be c / g / cg
+
+        #     if pcg.get_item("create_update") is None:
+        #         this should be case 1 and part of case 2
+        #         it means only get parameter shoud set output
+
+        #         pcg.set_item("output", True)
+
+        if pu and pcg:
+            # on this case pcg may be c / g / cg
+            # there are 3 cases of parameter type finally: cu / ug / cug
+
+            if pcg.get_item("create_update") is None:
+                # it is the case of ug
+
+                pcg.set_item("create_update", 'u')
+                pcg.set_item("description", pu.get_item("description"))
+
+            else:
+                # it is the case of cu or cug
+                pcg.set_item("create_update", 'cu')
 
 
-def _merge_update_to_create(pu, pc):
-    if pu and pc:
-        # only the top layer should set this config
-        if pu.get_item("create_update") is not None and (
-                pc.get_item("create_update") is not None):
+def _merge_update_to_create(pu, pc, level):
+    if level == mm_param.Merge_Level_Root:
+        pc.set_item("create_update", "cu")
+    else:
+        # if pc is None:
+        #     pu.set_item("create_update", "u")
+
+        # elif pu is None:
+        #     pc.set_item("create_update", "c")
+        if pu and pc:
             pc.set_item("create_update", "cu")
-
-        elif not (pu.get_item("create_update") is None and (
-                pc.get_item("create_update") is None)):
-            print("run _merge_update_to_create on %s, impossible\n" %
-                  pu.get_item("name"))
 
 
 def _change_by_config(doc_dir, parameters, properties):
@@ -172,8 +224,8 @@ def _change_by_config(doc_dir, parameters, properties):
         n = len(keys)
         try:
             for i in range(1, n):
-                 obj = getattr(obj, keys[i])
-        except AttributeError as ex:
+                obj = getattr(obj, keys[i])
+        except AttributeError:
             print("Can not find the parameter(%s)" % keys[i])
             return None, ''
 
@@ -254,7 +306,7 @@ def _change_by_config(doc_dir, parameters, properties):
             p.set_item("description", re.sub(pt, new, desc))
 
     for p, new in fields.items():
-        if new == "name": # 'name' is not a specical parameter, ignore it.
+        if new == "name":  # 'name' is not a specical parameter, ignore it.
             continue
 
         i = p.rfind('.')
