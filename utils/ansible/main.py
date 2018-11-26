@@ -293,7 +293,7 @@ def _change_by_config(doc_dir, parameters, properties):
         for k, v in kv.items():
             if k in fm:
                 fm[k](obj, pn, v)
-                if k == 'field':
+                if k == 'name':
                     fields[p] = v
             else:
                 print("Config unknown property(%s) for "
