@@ -50,7 +50,7 @@ def build_mm_params(doc_dir):
             "The struct name of get response should be \'get_rsp\'")
     properties = mm_param.build(struct, structs)
     for _, v in properties.items():
-        v.traverse(lambda n: n.set_item("output", True))
+        v.traverse(lambda n: n.set_item("crud", "r"))
 
     f = doc_dir + "create_rsp.docx"
     if os.path.exists(f):
@@ -89,7 +89,7 @@ def build_mm_params(doc_dir):
     r = mm_param.build(struct, structs)
     parameters = {}
     for k, v in r.items():
-        v.traverse(lambda n: n.set_item("create_update", 'c'))
+        v.traverse(lambda n: n.set_item("crud", 'c'))
         if k in properties:
             properties[k].merge(v, _merge_create_to_get,
                                 mm_param.Merge_Level_Root)
@@ -107,7 +107,7 @@ def build_mm_params(doc_dir):
         print("------ start to merge update parameters to get ------")
         r = mm_param.build(struct, structs)
         for k, v in r.items():
-            v.traverse(lambda n: n.set_item("create_update", 'u'))
+            v.traverse(lambda n: n.set_item("crud", 'u'))
             if k in properties:
                 properties[k].merge(v, _merge_update_to_get,
                                     mm_param.Merge_Level_Root)
@@ -117,6 +117,15 @@ def build_mm_params(doc_dir):
             else:
                 parameters[k] = v
 
+    def output(n):
+        p = n.parent
+        if n.get_item("crud") == 'r' and (
+                p is None or p.get_item("crud") != 'r'):
+            n.set_item("output", True)
+
+    for k, v in properties.items():
+        v.traverse(output)
+
     return properties, parameters
 
 
@@ -125,8 +134,7 @@ def _merge_create_to_get(pc, pg, level):
         # on the case, pc and pg will exist both
         # and pg is just the get parameter
 
-        pg.set_item("output", None)
-        pg.set_item("create_update", 'c')
+        pg.set_item("crud", pg.get_item("crud") + 'c')
         pg.set_item("required", pc.get_item("required"))
         pg.set_item("description", pc.get_item("description"))
 
@@ -140,7 +148,7 @@ def _merge_create_to_get(pc, pg, level):
         #     pg.set_item("output", True)
 
         if pc and pg:
-            pg.set_item("create_update", 'c')
+            pg.set_item("crud", pg.get_item("crud") + 'c')
             pg.set_item("required", pc.get_item("required"))
             pg.set_item("description", pc.get_item("description"))
 
@@ -148,31 +156,31 @@ def _merge_create_to_get(pc, pg, level):
 def _merge_update_to_get(pu, pcg, level):
     if level == mm_param.Merge_Level_Root:
         # on the case, pu and pcg will exist both
+        # pcg may be c, r, cr
 
-        if pcg.get_item("create_update") is None:
+        if pcg.get_item("crud") == 'r':
             # on this case, pcg is just the get parameter
 
-            pcg.set_item("output", None)
-            pcg.set_item("create_update", 'u')
             pcg.set_item("description", pu.get_item("description"))
 
-        else:
-            # on this case, pcg is both the get/create parameter
+        # else:
+        #     on this case, pcg is both the get/create parameter
 
-            pcg.set_item("create_update", 'cu')
+        #     pcg.set_item("create_update", 'cu')
+        pcg.set_item("crud", pcg.get_item("crud") + 'u')
 
     else:
         # on this case,
-        # there are 7 cases of parameter type: c / u / g / cu / ug / cg / cug
+        # there are 7 cases of parameter type: c / u / r / cu / ur / cr / cur
         # pcg has two cases:
         #  1. pcg is one of parameter set of get
         #  2. pcg is one of parameter set of create/get
 
         # if pcg is None:
-        #     pu.set_item("create_update", 'u')
+        #     pu.set_item("crud", 'u')
 
         # elif pu is None:
-        #     on this case pcg may be c / g / cg
+        #     on this case pcg may be c / r / cr
 
         #     if pcg.get_item("create_update") is None:
         #         this should be case 1 and part of case 2
@@ -181,23 +189,23 @@ def _merge_update_to_get(pu, pcg, level):
         #         pcg.set_item("output", True)
 
         if pu and pcg:
-            # on this case pcg may be c / g / cg
-            # there are 3 cases of parameter type finally: cu / ug / cug
+            # on this case pcg may be c / r / cr
+            # there are 3 cases of parameter type finally: cu / ur / cur
 
-            if pcg.get_item("create_update") is None:
-                # it is the case of ug
+            if pcg.get_item("crud") == 'r':
+                # it is the case of ur
 
-                pcg.set_item("create_update", 'u')
                 pcg.set_item("description", pu.get_item("description"))
 
-            else:
-                # it is the case of cu or cug
-                pcg.set_item("create_update", 'cu')
+            # else:
+            #     it is the case of cu or cur
+            #     pcg.set_item("create_update", 'cu')
+            pcg.set_item("crud", pcg.get_item("crud") + 'u')
 
 
 def _merge_update_to_create(pu, pc, level):
     if level == mm_param.Merge_Level_Root:
-        pc.set_item("create_update", "cu")
+        pc.set_item("crud", pc.get_item("crud") + 'u')
     else:
         # if pc is None:
         #     pu.set_item("create_update", "u")
@@ -205,7 +213,7 @@ def _merge_update_to_create(pu, pc, level):
         # elif pu is None:
         #     pc.set_item("create_update", "c")
         if pu and pc:
-            pc.set_item("create_update", "cu")
+            pc.set_item("crud", pc.get_item("crud") + 'u')
 
 
 def _change_by_config(doc_dir, parameters, properties):

@@ -8,8 +8,9 @@ Merge_Level = (
 
 
 class Basic(object):
-    def __init__(self, param):
+    def __init__(self, param, parent):
         self._mm_type = ""
+        self._parent = parent
 
         self._items = {
             "name": {
@@ -57,7 +58,7 @@ class Basic(object):
                 "yaml": lambda n, k, v: self._indent(n, k, '\'' + v + '\''),
             },
 
-            "create_update": {
+            "crud": {
                 "value": None,
                 "yaml": lambda n, k, v: self._indent(n, k, '\'' + v + '\''),
             },
@@ -72,6 +73,10 @@ class Basic(object):
                 "yaml": lambda n, k, v: self._indent(n, k, str(v).lower()),
             },
         }
+
+    @property
+    def parent(self):
+        return self._parent
 
     def to_yaml(self, indent):
         keys = self._items.keys()
@@ -151,32 +156,32 @@ class Basic(object):
 
 
 class MMString(Basic):
-    def __init__(self, param):
-        super(MMString, self).__init__(param)
+    def __init__(self, param, parent):
+        super(MMString, self).__init__(param, parent)
         self._mm_type = "!ruby/object:Api::Type::String"
 
 
 class MMInteger(Basic):
-    def __init__(self, param):
-        super(MMInteger, self).__init__(param)
+    def __init__(self, param, parent):
+        super(MMInteger, self).__init__(param, parent)
         self._mm_type = "!ruby/object:Api::Type::Integer"
 
 
 class MMBoolean(Basic):
-    def __init__(self, param):
-        super(MMBoolean, self).__init__(param)
+    def __init__(self, param, parent):
+        super(MMBoolean, self).__init__(param, parent)
         self._mm_type = "!ruby/object:Api::Type::Boolean"
 
 
 class MMTime(Basic):
-    def __init__(self, param):
-        super(MMTime, self).__init__(param)
+    def __init__(self, param, parent):
+        super(MMTime, self).__init__(param, parent)
         self._mm_type = "!ruby/object:Api::Type::Time"
 
 
 class MMNameValues(Basic):
-    def __init__(self, param):
-        super(MMNameValues, self).__init__(param)
+    def __init__(self, param, parent):
+        super(MMNameValues, self).__init__(param, parent)
         self._mm_type = "!ruby/object:Api::Type::NameValues"
 
         self._items.update({
@@ -192,8 +197,8 @@ class MMNameValues(Basic):
 
 
 class MMEnum(Basic):
-    def __init__(self, param, values=[]):
-        super(MMEnum, self).__init__(param)
+    def __init__(self, param, parent, values=[]):
+        super(MMEnum, self).__init__(param, parent)
         self._mm_type = "!ruby/object:Api::Type::Enum"
 
         self._items.update({
@@ -217,12 +222,12 @@ class MMEnum(Basic):
 
 
 class MMNestedObject(Basic):
-    def __init__(self, param, struct, all_structs):
-        super(MMNestedObject, self).__init__(param)
+    def __init__(self, param, struct, all_structs, parent):
+        super(MMNestedObject, self).__init__(param, parent)
         self._mm_type = "!ruby/object:Api::Type::NestedObject"
 
         self._items["properties"] = {
-            "value": build(struct, all_structs),
+            "value": build(struct, all_structs, self),
             "yaml": self._properties_yaml,
         }
 
@@ -275,8 +280,8 @@ class MMNestedObject(Basic):
 
 
 class MMArray(Basic):
-    def __init__(self, param, all_structs):
-        super(MMArray, self).__init__(param)
+    def __init__(self, param, all_structs, parent):
+        super(MMArray, self).__init__(param, parent)
         self._mm_type = "!ruby/object:Api::Type::Array"
 
         v = None
@@ -284,7 +289,7 @@ class MMArray(Basic):
         if ptype == "string":
             v = "Api::Type::String"
         elif ptype in all_structs:
-            v = build(all_structs[ptype], all_structs)
+            v = build(all_structs[ptype], all_structs, self)
         else:
             raise Exception("Convert to MMArray failed, unknown parameter "
                             "type(%s)" % ptype)
@@ -370,16 +375,16 @@ _mm_type_map = {
 }
 
 
-def build(struct, all_structs):
+def build(struct, all_structs, parent=None):
     r = {}
     for name, p in struct.items():
         ptype = p.ptype
         if ptype in _mm_type_map:
-            r[name] = _mm_type_map[ptype](p)
+            r[name] = _mm_type_map[ptype](p, parent)
         elif ptype in all_structs:
-            r[name] = MMNestedObject(p, all_structs[ptype], all_structs)
+            r[name] = MMNestedObject(p, all_structs[ptype], all_structs, parent)
         elif ptype.find("[]") == 0:
-            r[name] = MMArray(p, all_structs)
+            r[name] = MMArray(p, all_structs, parent)
         else:
             raise Exception("Convert to mm object failed, unknown parameter "
                             "type(%s)" % ptype)
