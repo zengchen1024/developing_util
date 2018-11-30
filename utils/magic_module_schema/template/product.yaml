@@ -1,0 +1,15 @@
+--- !ruby/object:Api::Product
+name: Telefonica Cloud
+prefix: tcompute
+cloud_short_name:      # hwc
+cloud_half_full_name:  # huawei
+cloud_full_name:       # huaweicloud
+cloud_full_name_upper: # HuaweiCloud
+versions:
+  - !ruby/object:Api::Product::Version
+    name: v1
+    base_url: ""
+    default: true
+scopes:
+  - "http://scopte"
+objects:
