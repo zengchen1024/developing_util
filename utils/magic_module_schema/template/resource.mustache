@@ -1,0 +1,29 @@
+  - !ruby/object:Api::Resource
+    name: '{{name}}'
+    service_type: '{{service_type}}'
+    base_url: '{{base_url}}'
+    list_url: '{{list_url}}'
+    {{#msg_prefix}}
+    msg_prefix:
+      {{#create}}
+      create: {{create}}
+      {{/create}}
+      {{#update}}
+      update: {{update}}
+      {{/update}}
+      {{#get}}
+      get: {{get}}
+      {{/get}}
+      {{#list}}
+      list: {{list}}
+      {{/list}}
+    {{/msg_prefix}}
+    {{#create_verb}}
+    create_verb: {{create_verb}}
+    {{/create_verb}}
+    {{#update_verb}}
+    update_verb: {{update_verb}}
+    {{/update_verb}}
+    {{#description}}
+    description: {{{description}}}
+    {{/description}}

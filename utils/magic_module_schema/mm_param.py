@@ -66,12 +66,12 @@ class Basic(object):
                 "yaml": lambda n, k, v: self._indent(n, k, '\'' + v + '\''),
             },
 
-            "ex_property_opts": {
+            "is_id": {
                 "value": None,
-                "yaml": None,
+                "yaml": lambda n, k, v: self._indent(n, k, str(v).lower()),
             },
 
-            "is_id": {
+            "send_empty_value": {
                 "value": None,
                 "yaml": lambda n, k, v: self._indent(n, k, str(v).lower()),
             },
@@ -120,6 +120,8 @@ class Basic(object):
         if type(self) != type(other):
             print("merge(%s) on different type:%s ->->->- %s\n" %
                   (self._items['name']['value'], type(other), type(self)))
+
+        # (TODO) Add white list to ignore the allowed merge
         else:
             callback(other, self, level)
 
@@ -200,17 +202,17 @@ class MMNameValues(Basic):
 
 
 class MMEnum(Basic):
-    def __init__(self, param, parent, values=[]):
+    def __init__(self, param, parent):
         super(MMEnum, self).__init__(param, parent)
         self._mm_type = "!ruby/object:Api::Type::Enum"
 
         self._items.update({
             "values": {
-                "value": values,
+                "value": param.get("allowed_values", None),
                 "yaml": self._values_yaml,
             },
             "element_type": {
-                "value": None,
+                "value": param.get("element_type", None),
                 "yaml": lambda n, k, v: self._indent(n, k, v),
             }
         })
@@ -375,6 +377,8 @@ _mm_type_map = {
     "time": MMTime,
     "enum": MMEnum,
     "map": MMNameValues,
+    "datetime": MMTime,
+    "date": MMTime,
 }
 
 

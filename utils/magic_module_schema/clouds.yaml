@@ -1,0 +1,20 @@
+clouds:
+  - cloud_short_name: "tfc"
+    cloud_half_full_name: "telefonica"
+    cloud_full_name: "telefonicaopencloud"
+    cloud_full_name_upper: "TelefonicaOpenCloud"
+
+  - cloud_short_name: "hwc"
+    cloud_half_full_name: "huawei"
+    cloud_full_name: "huaweicloud"
+    cloud_full_name_upper: "HuaweiCloud"
+
+  - cloud_short_name: "otc"
+    cloud_half_full_name: "opentelekom"
+    cloud_full_name: "opentelekomcloud"
+    cloud_full_name_upper: "OpenTelekomCloud"
+
+  - cloud_short_name: "fe"
+    cloud_half_full_name: "flexibleengine"
+    cloud_full_name: "flexibleengine"
+    cloud_full_name_upper: "FlexibleEngine"
