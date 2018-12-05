@@ -3,7 +3,7 @@ import pystache
 from custom_config import custom_config
 from resource_api import build_resource_api_info
 from resource_parameters import build_resource_params
-import utils
+from utils import build_path
 
 
 def build_resource_config(api_yaml, all_models, tag_info, custom_configs):
@@ -12,7 +12,7 @@ def build_resource_config(api_yaml, all_models, tag_info, custom_configs):
     properties, parameters = build_resource_params(api_info, all_models)
 
     if custom_configs:
-        custom_config(custom_configs, parameters, properties)
+        custom_config(custom_configs, parameters, properties, api_info)
 
     r = [_generate_resource_config(api_info, tag_info)]
     r.extend(_generate_parameter_config(properties, parameters))
@@ -21,7 +21,7 @@ def build_resource_config(api_yaml, all_models, tag_info, custom_configs):
 
 def _generate_resource_config(api_info, tag_info):
     msg_prefix = {}
-    for i in ["create", "update", "get", "list"]:
+    for i in ["create", "update", "get"]:
         s = api_info.get(i, {}).get("msg_prefix", None)
         if s:
             msg_prefix[i] = s
@@ -32,19 +32,27 @@ def _generate_resource_config(api_info, tag_info):
     data = {
         "name": service_type.upper() + tag[0].upper() + tag[1:].lower(),
         "service_type": service_type,
-        "base_url": utils.build_path(create_api["path"]),
+        "base_url": build_path(create_api["path"]),
         "msg_prefix": msg_prefix,
         "description": tag_info.get("description", ""),
         "create_verb": api_info["create"]["create_verb"],
     }
 
-    if "list" in api_info:
-        data["list_url"] = utils.build_path(
-            api_info["list"]["api"]["path"])
-
     if "update" in api_info:
-        data["update_verb"] = utils.build_path(
+        data["update_verb"] = build_path(
             api_info["update"]["update_verb"])
+
+    if "list" in api_info:
+        info = api_info["list"]
+        api = info["api"]
+        v = {
+            "path" : build_path(api["path"]),
+            "identity": [{"name": i} for i in info["identity"]]
+        }
+        v["query_params"] = [{"name": i["name"]} for i in api["query_params"]]
+        if "msg_prefix" in info:
+            v["msg_prefix"] = info["msg_prefix"]
+        data["list_info"] = v
 
     return pystache.Renderer().render_path("template/resource.mustache", data)
 

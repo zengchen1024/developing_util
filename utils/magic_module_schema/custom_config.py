@@ -92,7 +92,27 @@ def _replace_description(fields, parameters, properties):
                 obj.traverse(f)
 
 
-def custom_config(cnf, parameters, properties):
+def _config_list_op(cnf, api_info, fields):
+    list_op = cnf["list_op"]
+
+    identity = list_op.get("identity", None)
+    if not identity:
+        raise Exception("Must set (identity) in list_op")
+
+    obj = api_info["list"]
+    if fields:
+        obj["identity"] = [
+            fields.get(i, i) for i in identity
+        ]
+
+        for i in obj["api"]["query_params"]:
+            if i["name"] in fields:
+                i["name"] = fields[i["name"]]
+    else:
+        obj["identity"] = identity
+
+
+def custom_config(cnf, parameters, properties, api_info):
     fields = {}
     find_param = functools.partial(_find_param, parameters=parameters,
                                    properties=properties)
@@ -105,7 +125,7 @@ def custom_config(cnf, parameters, properties):
         'exclude': lambda p, pn, v: p.set_item("exclude", True),
         'field': lambda p, pn, v: p.set_item("field", v),
     }
-    for p, kv in cnf.items():
+    for p, kv in cnf.get("properties", {}).items():
         if not p:
             continue
 
@@ -125,3 +145,6 @@ def custom_config(cnf, parameters, properties):
 
     if fields:
         _replace_description(fields, parameters, properties)
+
+    if "list_op" in cnf:
+        _config_list_op(cnf, api_info, fields)

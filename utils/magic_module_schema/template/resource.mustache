@@ -2,7 +2,6 @@
     name: '{{name}}'
     service_type: '{{service_type}}'
     base_url: '{{base_url}}'
-    list_url: '{{list_url}}'
     {{#msg_prefix}}
     msg_prefix:
       {{#create}}
@@ -14,16 +13,28 @@
       {{#get}}
       get: {{get}}
       {{/get}}
-      {{#list}}
-      list: {{list}}
-      {{/list}}
     {{/msg_prefix}}
     {{#create_verb}}
-    create_verb: {{create_verb}}
+    create_verb: :{{create_verb}}
     {{/create_verb}}
     {{#update_verb}}
-    update_verb: {{update_verb}}
+    update_verb: :{{update_verb}}
     {{/update_verb}}
     {{#description}}
     description: {{{description}}}
     {{/description}}
+    {{#list_info}}
+    list_op: !ruby/object:Api::ListOp
+      path: {{path}}
+      query_params:
+      {{#query_params}}
+        - {{name}}
+      {{/query_params}}
+      identity:
+      {{#identity}}
+        - {{name}}
+      {{/identity}}
+      {{#msg_prefix}}
+      msg_prefix: {{msg_prefix}}
+      {{/msg_prefix}}
+    {{/list_info}}
