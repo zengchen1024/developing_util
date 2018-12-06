@@ -27,11 +27,10 @@ def _generate_resource_config(api_info, tag_info):
             msg_prefix[i] = s
 
     create_api = api_info["create"]["api"]
-    service_type = create_api["service_type"]
     tag = tag_info["name"]
     data = {
-        "name": service_type.upper() + tag[0].upper() + tag[1:].lower(),
-        "service_type": service_type,
+        "name": tag[0].upper() + tag[1:].lower(),
+        "service_type": create_api["service_type"],
         "base_url": build_path(create_api["path"]),
         "msg_prefix": msg_prefix,
         "description": tag_info.get("description", ""),

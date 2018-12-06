@@ -15,21 +15,22 @@ def run(api_path, cloud_name, tags, output):
     else:
         raise Exception("Unknown cloud(%s)" % cloud_name)
 
+    if api_path[-1] != "/":
+        api_path += "/"
+
+    product = read_yaml(api_path + "product.yaml")
+    if not product:
+        raise Exception("Read (%s) failed" % (api_path + "product.yaml"))
+
+    cloud["service_type"] = product["service_type"]
     r = []
     r.append(pystache.Renderer().render_path(
         "template/product.mustache", cloud))
 
-    if api_path[-1] != "/":
-        api_path += "/"
-
     api_yaml = read_yaml(api_path + "api.yaml")
     all_models = read_yaml(api_path + "models.yaml")
 
-    all_tags = read_yaml(api_path + "tag.yaml")
-    if not all_tags:
-        raise Exception("Read (%s) failed" % (api_path + "tag.yaml"))
-    all_tags = {i["name"]: i for i in all_tags["tags"]}
-
+    all_tags = {i["name"]: i for i in product["tags"]}
     for tag in tags.split(","):
         tag = tag.strip()
         if tag not in all_tags:
