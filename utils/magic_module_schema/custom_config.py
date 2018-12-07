@@ -112,6 +112,13 @@ def _config_list_op(cnf, api_info, fields):
         obj["identity"] = identity
 
 
+def _replace_path_params(api_info, fields):
+    for _, v in api_info.items():
+        for i in v["api"].get("path_params", []):
+            if i["name"] in fields:
+                i["name"] = fields[i["name"]]
+
+
 def custom_config(cnf, parameters, properties, api_info):
     fields = {}
     find_param = functools.partial(_find_param, parameters=parameters,
@@ -145,6 +152,7 @@ def custom_config(cnf, parameters, properties, api_info):
 
     if fields:
         _replace_description(fields, parameters, properties)
+        _replace_path_params(api_info, fields)
 
     if "list_op" in cnf:
         _config_list_op(cnf, api_info, fields)

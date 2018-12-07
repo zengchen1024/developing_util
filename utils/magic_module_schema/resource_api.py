@@ -44,6 +44,11 @@ class _ResourceApi(object):
         else:
             print("It can not to find the (list) api")
 
+        # other apis
+        v = set([k[2] for k in apis]) - set(r.values())
+        if v:
+            r["others"] = v
+
         return r
 
     def _sort(self):
@@ -82,11 +87,23 @@ def build_resource_api_info(api_yaml, all_models, tag):
         "create": _create_api_info(api_yaml[all_api["create"]], all_models),
         "get": _get_api_info(api_yaml[all_api["get"]], all_models)
     }
+    r["create"]["api"]["op_id"] = all_api["create"]
+    r["get"]["api"]["op_id"] = all_api["get"]
+
     if "update" in all_api:
-        r["update"] = _update_api_info(api_yaml[all_api["update"]], all_models)
+        k = all_api["update"]
+        r["update"] = _update_api_info(api_yaml[k], all_models)
+        r["update"]["api"]["op_id"] = k
 
     if "list" in all_api:
-        r["list"] = _list_api_info(api_yaml[all_api["list"]], all_models)
+        k = all_api["list"]
+        r["list"] = _list_api_info(api_yaml[k], all_models)
+        r["list"]["api"]["op_id"] = k
+
+    for i in all_api.get("others", []):
+        v = api_yaml[i]
+        v["op_id"] = i
+        r["other_" + i] = {"api": v}
 
     return r
 
