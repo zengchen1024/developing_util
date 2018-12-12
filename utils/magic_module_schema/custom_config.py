@@ -129,6 +129,7 @@ def custom_config(cnf, parameters, properties, api_info):
         'element_type': _config_element_type,
         'exclude': lambda p, pn, v: p.set_item("exclude", True),
         'field': lambda p, pn, v: p.set_item("field", v),
+        'alone_parameter': lambda p, pn, v: p.set_item("alone_parameter", True)
     }
     for p, kv in cnf.get("properties", {}).items():
         if not p:

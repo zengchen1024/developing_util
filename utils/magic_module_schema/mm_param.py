@@ -47,7 +47,7 @@ class Basic(object):
             },
 
             "required": {
-                "value": True if param["mandatory"] == "yes" else None,
+                "value": True if param["mandatory"] else None,
                 "yaml": lambda n, k, v: self._indent(n, k, str(v).lower()),
             },
 
