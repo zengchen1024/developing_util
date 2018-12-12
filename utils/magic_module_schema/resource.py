@@ -31,12 +31,12 @@ def build_resource_config(api_yaml, all_models, tag_info, custom_configs):
     if custom_configs:
         custom_config(custom_configs, parameters, properties, api_info)
 
-    r = [_generate_resource_config(api_info, tag_info)]
+    r = [_generate_resource_config(api_info, tag_info, custom_configs)]
     r.extend(_generate_parameter_config(properties, parameters))
     return r
 
 
-def _generate_resource_config(api_info, tag_info):
+def _generate_resource_config(api_info, tag_info, custom_configs):
     msg_prefix = {}
     for i in ["create", "update", "get"]:
         s = api_info.get(i, {}).get("msg_prefix", None)
@@ -44,9 +44,15 @@ def _generate_resource_config(api_info, tag_info):
             msg_prefix[i] = s
 
     create_api = api_info["create"]["api"]
-    tag = tag_info["name"]
+    rn = tag_info["name"]
+    if custom_configs:
+        rn = custom_configs.get("resource_name", rn)
+    if isinstance(rn, unicode):
+        raise Exception("Must config resouce_name in English, "
+                        "because the tag is Chinese")
+
     data = {
-        "name": tag[0].upper() + tag[1:].lower(),
+        "name": rn[0].upper() + rn[1:].lower(),
         "service_type": create_api["service_type"],
         "base_url": build_path(create_api["path"]),
         "msg_prefix": msg_prefix,
