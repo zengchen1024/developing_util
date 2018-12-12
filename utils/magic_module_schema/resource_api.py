@@ -5,7 +5,7 @@ class _ResourceApi(object):
     def __init__(self, api_yaml, tag):
         r = []
         for k, v in api_yaml.items():
-            if v.get("tag", "") == tag:
+            if tag in v.get("tag", []):
                 path = v["path"]
                 if path[-1] != "/":
                     path += "/"

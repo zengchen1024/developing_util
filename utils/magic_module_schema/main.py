@@ -32,7 +32,7 @@ def run(api_path, cloud_name, tags, output):
 
     all_tags = {i["name"]: i for i in product["tags"]}
     for tag in tags.split(","):
-        tag = tag.strip()
+        tag = tag.strip().decode("utf8")
         if tag not in all_tags:
             raise Exception("Unknown tag(%s)" % tag)
 

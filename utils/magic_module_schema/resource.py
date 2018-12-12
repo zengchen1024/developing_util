@@ -60,6 +60,9 @@ def _generate_resource_config(api_info, tag_info):
 
     if "list" in api_info:
         info = api_info["list"]
+        if "identity" not in info:
+            raise Exception("Must config identity for list operation")
+
         api = info["api"]
         v = {
             "path" : build_path(api["path"]),
