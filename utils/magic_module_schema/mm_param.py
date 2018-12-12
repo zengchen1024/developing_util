@@ -75,6 +75,11 @@ class Basic(object):
                 "value": None,
                 "yaml": lambda n, k, v: self._indent(n, k, str(v).lower()),
             },
+
+            "alone_parameter": {
+                "value": None,
+                "yaml": lambda n, k, v: self._indent(n, k, str(v).lower()),
+            },
         }
 
     @property

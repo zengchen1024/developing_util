@@ -67,8 +67,7 @@ def _replace_description(fields, parameters, properties):
         if re.findall(pt, desc):
             p.set_item("description", re.sub(pt, new, desc))
 
-    find_param = functools.partial(_find_param, parameters=parameters,
-                                   properties=properties)
+    find_param = functools.partial(_find_param, parameters, properties)
 
     for p, new in fields.items():
         if new == "name":  # 'name' is not a specical parameter, ignore it.
@@ -121,8 +120,7 @@ def _replace_path_params(api_info, fields):
 
 def custom_config(cnf, parameters, properties, api_info):
     fields = {}
-    find_param = functools.partial(_find_param, parameters=parameters,
-                                   properties=properties)
+    find_param = functools.partial(_find_param, parameters, properties)
     fm = {
         'name': _config_name,
         'is_id': lambda p, pn, v: p.set_item("is_id", True),
