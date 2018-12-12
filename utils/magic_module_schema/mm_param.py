@@ -189,6 +189,20 @@ class MMNameValues(Basic):
         super(MMNameValues, self).__init__(param, parent)
         self._mm_type = "!ruby/object:Api::Type::NameValues"
 
+        m = re.match(r"dict\((.*),(.*)\)", param["datatype"])
+        if not m:
+            raise Exception("Convert to MMNameValues failed, unknown "
+                            "parameter type(%s) for parameter(%s)" % (
+                                param["datatype"], param["name"]))
+
+        kt = m.group(1).strip()
+        vt = m.group(2).strip()
+        if kt != "str" or vt != "str":
+            raise Exception("Convert to MMNameValues failed, unknown "
+                            "parameter type(%s) for parameter(%s). The type "
+                            "of key and value must be str" % (
+                                param["datatype"], param["name"]))
+
         self._items.update({
             "key_type": {
                 "value": "Api::Type::String",
@@ -289,15 +303,22 @@ class MMArray(Basic):
         super(MMArray, self).__init__(param, parent)
         self._mm_type = "!ruby/object:Api::Type::Array"
 
+        supported_sub_datatype = {
+            "str": "Api::Type::String",
+            "int": "Api::Type::Integer"
+        }
         v = None
         sub_datatype = re.match(r"list\[(.*)\]", param["datatype"]).group(1)
-        if sub_datatype == "str":
-            v = "Api::Type::String"
+        if sub_datatype in supported_sub_datatype:
+            v = supported_sub_datatype[sub_datatype]
+
         elif sub_datatype in all_structs:
             v = build(all_structs[sub_datatype], all_structs, self)
+
         else:
             raise Exception("Convert to MMArray failed, unknown parameter "
-                            "type(%s)" % sub_datatype)
+                            "type(%s) for parameter(%s)" % (
+                                sub_datatype, param["name"]))
 
         self._items["item_type"] = {
             "value": v,
@@ -398,7 +419,10 @@ def build(struct, all_structs, parent=None):
         elif datatype.find("list") == 0:
             r[name] = MMArray(p, all_structs, parent)
 
+        elif datatype.find("dict") == 0:
+            r[name] = MMNameValues(p, parent)
+
         else:
             raise Exception("Convert to mm object failed, unknown parameter "
-                            "type(%s)" % datatype)
+                            "type(%s) for parameter(%s)" % (datatype, name))
     return r

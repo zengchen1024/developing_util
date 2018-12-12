@@ -41,6 +41,7 @@ class _ResourceApi(object):
         for item in apis:
             if item[1] == "get" and item[0] == create_path:
                 r["list"] = item[2]
+                break
         else:
             print("It can not to find the (list) api")
 
