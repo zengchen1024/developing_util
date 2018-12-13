@@ -80,12 +80,13 @@ class _ResourceApi(object):
             raise Exception("It can not to find the (%s) api" % t)
 
 
-def build_resource_api_info(api_yaml, all_models, tag):
+def build_resource_api_info(api_yaml, all_models, tag, custom_configs):
 
     all_api = _ResourceApi(api_yaml, tag)()
 
     r = {
-        "create": _create_api_info(api_yaml[all_api["create"]], all_models),
+        "create": _create_api_info(api_yaml[all_api["create"]],
+                                   all_models, custom_configs),
         "get": _get_api_info(api_yaml[all_api["get"]], all_models)
     }
     r["create"]["api"]["op_id"] = all_api["create"]
@@ -109,7 +110,7 @@ def build_resource_api_info(api_yaml, all_models, tag):
     return r
 
 
-def _create_api_info(api, all_models):
+def _create_api_info(api, all_models, custom_configs):
     p = api.get("request_body", {}).get("datatype", "")
     if p not in all_models:
         raise Exception("It can not build create parameter, "
@@ -117,11 +118,20 @@ def _create_api_info(api, all_models):
 
     msg_prefix = None
     body = all_models.get(p)
-    p = body
-    if len(p) == 1 and p[0]["datatype"] in all_models:
-        msg_prefix = p[0]["name"]
-        body = all_models[p[0]["datatype"]]
-    # (TODO): alone parameters
+
+    p = None
+    if len(body) == 1:
+        p = body[0]
+
+    elif len(body) > 1:
+        ps = custom_configs.get("properties", {})
+        v = [i for i in body if "alone_parameter" not in ps.get(i["name"], {})]
+        if len(v) == 1:
+            p = v[0]
+
+    if p and p["datatype"] in all_models:
+        msg_prefix = p["name"]
+        body = all_models[p["datatype"]]
 
     return {
         "api": api,

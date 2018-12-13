@@ -8,7 +8,8 @@ from utils import build_path
 
 
 def build_resource_config(api_yaml, all_models, tag_info, custom_configs):
-    api_info = build_resource_api_info(api_yaml, all_models, tag_info["name"])
+    api_info = build_resource_api_info(
+        api_yaml, all_models, tag_info["name"], custom_configs)
 
     properties, parameters = build_resource_params(api_info, all_models)
 
