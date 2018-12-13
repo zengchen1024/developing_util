@@ -90,7 +90,9 @@ def _generate_parameter_config(properties, parameters):
         keys = sorted(params.keys())
         for k in keys:
             v = params[k]
-            r.extend(v.to_yaml(n))
+            s = v.to_yaml(n)
+            if s:
+                r.extend(s)
         return r
 
     result = []

@@ -87,6 +87,9 @@ class Basic(object):
         return self._parent
 
     def to_yaml(self, indent):
+        if self.get_item("exclude"):
+            return
+
         keys = self._items.keys()
         keys.remove("name")
         keys.remove("description")
@@ -261,7 +264,9 @@ class MMNestedObject(Basic):
         keys = sorted(v.keys())
         indent += 2
         for k1 in keys:
-            r.extend(v[k1].to_yaml(indent))
+            s = v[k1].to_yaml(indent)
+            if s:
+                r.extend(s)
         return "".join(r)
 
     def __getattr__(self, key):
@@ -347,7 +352,9 @@ class MMArray(Basic):
         keys = sorted(v.keys())
         indent += 4
         for k1 in keys:
-            r.extend(v[k1].to_yaml(indent))
+            s = v[k1].to_yaml(indent)
+            if s:
+                r.extend(s)
         return "".join(r)
 
     def __getattr__(self, key):
