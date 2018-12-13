@@ -4,7 +4,7 @@ import mm_param
 def build_resource_params(api_info, all_models):
     properties = mm_param.build(api_info["get"]["body"], all_models)
     for _, v in properties.items():
-        v.traverse(lambda n: n.set_item("crud", "r"))
+        v.traverse(lambda n: _set_property(n, {"crud": "r", "required": None}))
 
     print("------ start to merge create parameters to get ------")
     r = mm_param.build(api_info["create"]["body"], all_models)
@@ -22,7 +22,9 @@ def build_resource_params(api_info, all_models):
         print("------ start to merge update parameters to get ------")
         r = mm_param.build(api_info["update"]["body"], all_models)
         for k, v in r.items():
-            v.traverse(lambda n: n.set_item("crud", 'u'))
+            v.traverse(
+                lambda n: _set_property(n, {"crud": "u", "required": None}))
+
             if k in properties:
                 properties[k].merge(v, _merge_update_to_get,
                                     mm_param.Merge_Level_Root)
@@ -129,3 +131,8 @@ def _merge_update_to_create(pu, pc, level):
         #     pc.set_item("create_update", "c")
         if pu and pc:
             pc.set_item("crud", pc.get_item("crud") + 'u')
+
+
+def _set_property(p, kv):
+    for k, v in kv.items():
+        p.set_item(k, v)
