@@ -127,9 +127,16 @@ class Basic(object):
     def merge(self, other, callback, level):
         if type(self) != type(other):
             print("merge(%s) on different type:%s ->->->- %s\n" %
-                  (self._items['name']['value'], type(other), type(self)))
+                  (self.get_item('name'), type(other), type(self)))
 
-        # (TODO) Add white list to ignore the allowed merge
+            simple_type = (MMString, MMInteger, MMBoolean, MMTime)
+            if isinstance(self, simple_type) and isinstance(
+                    other, simple_type):
+                callback(other, self, level)
+
+            else:
+                raise Exception("Can't merge on different type")
+
         else:
             callback(other, self, level)
 

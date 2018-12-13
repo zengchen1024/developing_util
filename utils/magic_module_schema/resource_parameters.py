@@ -1,49 +1,118 @@
 import mm_param
 
 
-def build_resource_params(api_info, all_models):
+def build_resource_params(api_info, all_models, custom_configs):
+
     properties = mm_param.build(api_info["get"]["body"], all_models)
     for _, v in properties.items():
         v.traverse(lambda n: _set_property(n, {"crud": "r", "required": None}))
 
     print("------ start to merge create parameters to get ------")
+
     r = mm_param.build(api_info["create"]["body"], all_models)
-    parameters = {}
-    for k, v in r.items():
-        v.traverse(lambda n: n.set_item("crud", 'c'))
-        if k in properties:
-            properties[k].merge(v, _merge_create_to_get,
-                                mm_param.Merge_Level_Root)
-        else:
-            v.set_item("input", True)
-            parameters[k] = v
+    parameters = _build_create_params(properties, r, custom_configs)
 
     if "update" in api_info:
         print("------ start to merge update parameters to get ------")
+
         r = mm_param.build(api_info["update"]["body"], all_models)
-        for k, v in r.items():
-            v.traverse(
-                lambda n: _set_property(n, {"crud": "u", "required": None}))
+        _build_update_params(properties, parameters, r, custom_configs)
 
-            if k in properties:
-                properties[k].merge(v, _merge_update_to_get,
-                                    mm_param.Merge_Level_Root)
-            elif k in parameters:
-                parameters[k].merge(v, _merge_update_to_create,
-                                    mm_param.Merge_Level_Root)
-            else:
-                parameters[k] = v
-
-    def output(n):
+    def _output(n):
         p = n.parent
         if n.get_item("crud") == 'r' and (
                 p is None or p.get_item("crud") != 'r'):
             n.set_item("output", True)
 
     for k, v in properties.items():
-        v.traverse(output)
+        v.traverse(_output)
 
     return properties, parameters
+
+
+def _build_create_params(properties, params, custom_configs):
+    parameters = {}
+    force_merge = custom_configs.get("force_merge", {}).get(
+        "create_to_get", {})
+
+    for k, v in params.items():
+        v.traverse(lambda n: n.set_item("crud", 'c'))
+
+        if k in properties:
+            properties[k].merge(v, _merge_create_to_get,
+                                mm_param.Merge_Level_Root)
+
+        elif k in force_merge:
+            k1 = force_merge[k]
+
+            if k1 not in properties:
+                raise Exception("Force merge create(%s) to get(%s) failed, "
+                                "can't find corresponding get parameter" % (
+                                    k, k1))
+
+            t = properties[k1]
+            t.set_item("field", "%s/%s" % (k, k1))
+            try:
+                t.merge(v, _merge_create_to_get, mm_param.Merge_Level_Root)
+            except:
+                properties.pop(k1)
+                properties[k] = v
+                v.set_item("field", "%s/%s" % (k, k1))
+                v.set_item("crud", "cr")
+        else:
+            v.set_item("input", True)
+            parameters[k] = v
+
+    return parameters
+
+
+def _build_update_params(properties, parameters, params, custom_configs):
+    force_merge = custom_configs.get("force_merge", {}).get(
+        "update_to_create_get", {})
+
+    for k, v in params.items():
+        v.traverse(
+            lambda n: _set_property(n, {"crud": "u", "required": None}))
+
+        if k in properties:
+            properties[k].merge(v, _merge_update_to_get,
+                                mm_param.Merge_Level_Root)
+
+        elif k in parameters:
+            parameters[k].merge(v, _merge_update_to_create,
+                                mm_param.Merge_Level_Root)
+
+        elif k in force_merge:
+            k1 = force_merge[k]
+
+            if k1 in properties:
+                t = properties[k1]
+                if t.get_item("crud") != "r":
+                    raise Exception("Doesn't support force merging update(%s) "
+                                    "to a non read only(crud=%s) "
+                                    "property(%s)" % (
+                                        k, t.get_item("crud"), k1))
+
+                t.set_item("field", "%s/%s" % (k, k1))
+                try:
+                    t.merge(v, _merge_update_to_get, mm_param.Merge_Level_Root)
+                except:
+                    properties.pop(k1)
+                    properties[k] = v
+                    v.set_item("field", "%s/%s" % (k, k1))
+                    v.set_item("crud", "ur")
+
+            elif k1 in parameters:
+                raise Exception("Doesn't support force merging update(%s) to "
+                                "a property(%s) belonging to Parameters" %(
+                                    k, k1))
+            else:
+                raise Exception("Force merge update(%s) to create/get(%s) "
+                                "failed, can't find corresponding "
+                                "create/get parameter" % (k, k1))
+
+        else:
+            parameters[k] = v
 
 
 def _merge_create_to_get(pc, pg, level):
