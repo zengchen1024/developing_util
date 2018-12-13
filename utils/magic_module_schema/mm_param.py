@@ -235,13 +235,17 @@ class MMEnum(Basic):
         super(MMEnum, self).__init__(param, parent)
         self._mm_type = "!ruby/object:Api::Type::Enum"
 
+        element_type = {
+            "str": "Api::Type::String",
+            "int": "Api::Type::Integer"
+        }
         self._items.update({
             "values": {
                 "value": param.get("allowed_values", None),
                 "yaml": self._values_yaml,
             },
             "element_type": {
-                "value": param.get("element_type", None),
+                "value": element_type.get(param.get("element_type", ""), None),
                 "yaml": lambda n, k, v: self._indent(n, k, v),
             }
         })
