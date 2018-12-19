@@ -119,7 +119,7 @@ def _create_api_info(api, all_models, custom_configs):
                         "the datatype(%s) is not a struct" % p)
 
     body = all_models.get(p)
-    cmds = custom_configs.get("preprocess", {}).get("create")
+    cmds = custom_configs.get("create")
     if cmds:
         preprocess(body, all_models, cmds)
 

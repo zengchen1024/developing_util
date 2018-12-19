@@ -10,7 +10,8 @@ from utils import build_path
 def generate_resource_parameter_tree(api_yaml, all_models, tag_info,
                                      custom_configs):
     api_info = build_resource_api_info(
-        api_yaml, all_models, tag_info["name"], custom_configs)
+        api_yaml, all_models, tag_info["name"],
+        custom_configs.get("preprocess", {}))
 
     properties, parameters = build_resource_params(
         api_info, all_models, {})
