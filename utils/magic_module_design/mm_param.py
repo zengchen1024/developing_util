@@ -47,10 +47,11 @@ class Basic(object):
             },
 
             "field": {
-                "value": self.field,
-                "create": None,
-                "update": None,
-                "read": None,
+                "value": {
+                    "create": None,
+                    "update": None,
+                    "read": None,
+                },
                 "yaml": lambda n, k, v: _indent(n, k, "\'%s\'" % v),
             },
 
@@ -70,8 +71,8 @@ class Basic(object):
             },
 
             "crud": {
-                "value": self.crud,
-                "yaml": lambda n, k, v: _indent(n, k, "\'%s\'" % self.crud),
+                "value": None,
+                "yaml": lambda n, k, v: _indent(n, k, "\'%s\'" % v),
             },
 
             "is_id": {
@@ -135,11 +136,20 @@ class Basic(object):
         r = ["%s- %s\n" % (' ' * indent, self._mm_type)]
         indent += 2
         for k in keys:
-            v = self._items[k]
-            if v["value"] is not None:
-                s = v["yaml"](indent, k, v["value"])
-                if s:
-                    r.append(s)
+            v = None
+
+            if k == "field":
+                v = self.field
+
+            elif k == "crud":
+                v = self.crud
+
+            else:
+                v = self.get_item(k)
+
+            if v:
+                r.append(self._items[k]["yaml"](indent, k, v))
+
         return r
 
     def to_param_yaml(self, indent):
@@ -149,8 +159,9 @@ class Basic(object):
         r = [
             "%s%s:\n" % (' ' * indent, self.get_item("name")),
             "%scrud: %s\n" % (' ' * (indent + 2), self.crud),
-            "%sfield: %s\n" % (' ' * (indent + 2), self.field)
         ]
+        if self.field:
+            r.append("%sfield: %s\n" % (' ' * (indent + 2), self.field))
 
         keys = self._items.keys()
         keys.sort()
@@ -166,9 +177,18 @@ class Basic(object):
 
     def set_item(self, k, v):
         if k in self._items:
-            self._items[k]["value"] = v
+            if k == "field":
+                self.field = v
+            else:
+                self._items[k]["value"] = v
 
     def get_item(self, k, default=None):
+        if k == "field":
+            return self.field
+
+        elif k == "crud":
+            return self.crud
+
         return self._items[k]["value"] if k in self._items else default
 
     def merge(self, other, callback, level):
@@ -223,7 +243,7 @@ class Basic(object):
 
     @property
     def field(self):
-        v = self.get_item("field")
+        v = self._items["field"]["value"]
 
         if not any(v.values()):
             if self.get_item("name") != self._api_name:
@@ -246,9 +266,24 @@ class Basic(object):
                 return "%s/%s" % (v1, r)
             return v1
 
+    @field.setter
+    def field(self, v):
+        v1 = v.split(" ")
+        m = {item[:i]: item[(i + 1):] for item in v1}
+
+        r = set(m.keys()) - set(["create", "update", "read"])
+        if r:
+            raise Exception("Set field of parameter(%s) failed, "
+                            "unspport operation(%s)" % (
+                                self.api_name, "".join(r)))
+
+        obj = self._items["field"]["value"]
+        for k, v2 in m.items():
+            obj[k] = v2
+
     @property
     def crud(self):
-        v = self.get_item("crud")
+        v = self._items["crud"]["value"]
         if v:
             return v
 
