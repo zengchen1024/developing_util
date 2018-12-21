@@ -136,12 +136,11 @@ def build_resource_config(api_info, properties, tag_info,
     params = {}
     pros = {}
     for k, v in properties.items():
-        crud = v.get_item("crud")
-        if crud.find("r") == -1:
-            params[k] = v
+        if "r" in v.get_item("crud"):
+            pros[k] = v
 
         else:
-            pros[k] = v
+            params[k] = v
 
     _set_output(pros)
 

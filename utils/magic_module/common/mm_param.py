@@ -148,7 +148,6 @@ class Basic(object):
 
         r = [
             "%s%s:\n" % (' ' * indent, self.get_item("name")),
-            "%scrud: %s\n" % (' ' * (indent + 2), self._crud()),
         ]
         for k, v in self.get_item("field").items():
             if v:
@@ -271,16 +270,8 @@ class Basic(object):
             obj[k] = v2
 
     def _crud(self):
-        v = self._items["crud"]["value"]
-        if v:
-            return v
-
-        r = []
-        for k, v in self.get_item("field").items():
-            if v:
-                r.append(k[0])
-
-        return "".join(r) if r else None
+        r = [k[0] for k, v in self.get_item("field").items() if v]
+        return "".join(r) if r else ""
 
 
 class MMString(Basic):

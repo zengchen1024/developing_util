@@ -128,7 +128,7 @@ class _Tree(object):
             obj.set_item("field", " ".join(field))
 
             crud = o.get_item("crud")
-            if crud.find("c") != -1:
+            if "c" in crud:
                 v = o.get_item("required")
                 if v:
                     obj.set_item("required", v)
@@ -140,7 +140,7 @@ class _Tree(object):
             if obj.get_item("description"):
                 continue
 
-            if crud.find("u") != -1:
+            if "u" in crud:
                 v = o.get_item("description")
                 if v:
                     obj.set_item("description", v)
