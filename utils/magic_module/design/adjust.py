@@ -43,6 +43,36 @@ class _Tree(object):
         p = self.find_param(node)
         p.parent.delete_child(p)
 
+    def append_parameter(self, argv):
+        v = argv.split(" ")
+        name = v[0]
+        items = v[1:]
+        cmd = "append %s" % argv
+
+        parent = self.find_param(name)
+
+        p = []
+        t = set()
+        t.add(type(parent))
+        for item in items:
+            o = self.find_param(item)
+            p.append(o)
+            t.add(type(o))
+
+        if len(t) != 1:
+            raise Exception("Execute cmd(%s) failed, all the "
+                            "parameter should be the same type" % cmd)
+
+        crud = [i for i in parent.get_item("crud")]
+        for o in p:
+            for i in o.get_item("crud"):
+                if i in crud:
+                    raise Exception("Execute cmd(%s) failed, the parameter "
+                                    "members have same crud" % cmd)
+                crud.append(i)
+
+        self._add_members(parent, p)
+
     def add_parameter(self, argv):
         v = argv.split(" ")
         name = v[0]
@@ -51,32 +81,23 @@ class _Tree(object):
 
         node_name = name
         parent = self
-        i = name.rfind(":")
+        i = name.rfind(".")
         if i > 0:
             parent = self.find_param(name[:i])
             node_name = name[(i+1):]
-        else:
-            if name in self._p:
-                raise Exception("Execute cmd(%s) failed, the "
-                                "parameter(%s) is exist" % (cmd, name))
+
+        try:
+            parent.child(node_name)
+            n = "root_node" if parent == self else parent.get_item("name")
+            raise Exception("Execute cmd(%s) failed, the parameter(%s) is "
+                            "exist in parameter(%s)" % (cmd, node_name, n))
+        except:
+            pass
 
         p = []
-        crud = None
         t = set()
         for item in items:
-            i = item.find(":")
-            if i == -1:
-                raise Exception("Execute cmd(%s) failed, the "
-                                "parameter should be in format of k:v where "
-                                "k is one of create, update, read and v is "
-                                "the index to the real parameter" % cmd)
-
-            op = item[:i]
-            if op not in ["create", "upate", "read"]:
-                raise Exception("Execute cmd(%s) failed, the operation "
-                                "must be crate, update or read" % cmd)
-
-            o = self.find_param(item[(i + 1):])
+            o = self.find_param(item)
             p.append(o)
             t.add(type(o))
 
@@ -92,16 +113,14 @@ class _Tree(object):
                                     "members have same crud" % cmd)
                 crud.append(i)
 
-        self._add_new_node(p, parent, node_name)
-
-    def _add_new_node(self, members, parent, node_name):
-
-        obj = members[0].clone()
+        obj = p[0].clone()
         obj.parent = parent
         obj.set_item("name", node_name)
-
         parent.add_child(obj)
 
+        self._add_members(obj, p)
+
+    def _add_members(self, obj, members):
         for o in members:
             field = [
                 "%s:%s" % (k, v) for k, v in o.get_item("field").items() if v
@@ -230,6 +249,7 @@ def adjust(adjust_cmds, properties):
         'rename': rn.rename,
         'delete': rn.delete,
         'add': rn.add_parameter,
+        'append': rn.append_parameter
     }
 
     for cmds in adjust_cmds:
