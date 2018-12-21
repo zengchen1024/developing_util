@@ -18,7 +18,10 @@ class _Tree(object):
         raise Exception("no child with key(%s)" % key)
 
     def add_child(self, child):
-        self._p[child.api_name] = child
+        self._p[child.get_item("name")] = child
+
+    def delete_child(self, child):
+        self._p.pop(child.get_item("name"))
 
     def find_param(self, keys):
         obj = self
@@ -38,7 +41,7 @@ class _Tree(object):
 
     def delete(self, node):
         p = self.find_param(node)
-        p.set_item("exclude", True)
+        p.parent.delete_child(p)
 
     def add_parameter(self, argv):
         v = argv.split(" ")
@@ -94,7 +97,6 @@ class _Tree(object):
     def _add_new_node(self, members, parent, node_name):
 
         obj = members[0].clone()
-        obj.api_name = node_name
         obj.parent = parent
         obj.set_item("name", node_name)
 

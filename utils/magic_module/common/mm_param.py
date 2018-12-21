@@ -17,7 +17,6 @@ def _indent(indent, key, value):
 class Basic(object):
     def __init__(self):
         self._mm_type = ""
-        self._api_name = ""
         self._parent = None
 
         self._items = {
@@ -99,16 +98,7 @@ class Basic(object):
     def parent(self, p):
         self._parent = p
 
-    @property
-    def api_name(self):
-        return self._api_name
-
-    @api_name.setter
-    def api_name(self, name):
-        self._api_name = name
-
     def init(self, param, parent):
-        self._api_name = param["name"]
         self._parent = parent
 
         self.set_item("name", param["name"])
@@ -208,6 +198,9 @@ class Basic(object):
     def add_child(self, child):
         raise Exception("Unsupported method of add_child")
 
+    def delete_child(self, child):
+        raise Exception("Unsupported method of delete_child")
+
     def _desc_yaml(self, indent, k, v):
         if indent + len(k) + len(v) + 4 < 80:
             return _indent(indent, k, "\"%s\"" % v)
@@ -240,12 +233,11 @@ class Basic(object):
         return "".join(result)
 
     def _field_value(self):
+        k = self.get_item("name")
         v = self.get_item("field")
-        if not any(v.values()):
-            if self.get_item("name") != self._api_name:
-                return self._api_name
 
-            return None
+        if not any(v.values()):
+            raise Exception("The field property of parameter(%s) is None" % k)
 
         c = v["create"]
         u = v["update"]
@@ -272,7 +264,7 @@ class Basic(object):
         if r:
             raise Exception("Set field of parameter(%s) failed, "
                             "unspport operation(%s)" % (
-                                self.api_name, "".join(r)))
+                                self.get_item("name"), "".join(r)))
 
         obj = self._items["field"]["value"]
         for k, v2 in m.items():
@@ -441,7 +433,11 @@ class MMNestedObject(Basic):
             v = {}
             self.set_item("properties", v)
 
-        v[child.api_name] = child
+        v[child.get_item("name")] = child
+
+    def delete_child(self, child):
+        v = self.get_item("properties")
+        v.pop(child.get_item("name"))
 
     def init(self, param, parent, all_structs):
         super(MMNestedObject, self).init(param, parent)
@@ -544,7 +540,11 @@ class MMArray(Basic):
             v = {}
             self.set_item("item_type", v)
 
-        v[child.api_name] = child
+        v[child.get_item("name")] = child
+
+    def delete_child(self, child):
+        v = self.get_item("item_type")
+        v.pop(child.get_item("name"))
 
     def init(self, param, parent, all_structs):
         super(MMArray, self).init(param, parent)
