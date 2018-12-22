@@ -194,6 +194,9 @@ class Basic(object):
     def child(self, key):
         raise Exception("Unsupported method of child")
 
+    def childs(self):
+        raise Exception("Unsupported method of childs")
+
     def add_child(self, child):
         raise Exception("Unsupported method of add_child")
 
@@ -459,10 +462,17 @@ class MMNestedObject(Basic):
 
     def child(self, key):
         p = self.get_item("properties")
-        if key in p:
+        if isinstance(p, dict) and key in p:
             return p[key]
 
         raise Exception("no child with key(%s)" % key)
+
+    def childs(self):
+        p = self.get_item("properties")
+        if isinstance(p, dict):
+            return p.values()
+
+        raise Exception("no childs for nested object")
 
     def merge(self, other, callback, level):
         super(MMNestedObject, self).merge(other, callback, level)
@@ -595,6 +605,13 @@ class MMArray(Basic):
             return item_type[key]
 
         raise Exception("no child with key(%s)" % key)
+
+    def childs(self):
+        item_type = self.get_item("item_type")
+        if isinstance(item_type, dict):
+            return item_type.values()
+
+        raise Exception("no childs for array that item type is not a struct")
 
     def merge(self, other, callback, level):
         super(MMArray, self).merge(other, callback, level)

@@ -48,7 +48,24 @@ class _Tree(object):
 
     def delete(self, node):
         p = self.find_param(node)
-        p.parent.delete_child(p)
+        crud = set([i for i in p.get_item("crud")])
+        parent = p.parent
+        parent.delete_child(p)
+
+        while parent != self:
+            for i in parent.childs():
+                for j in i.get_item("crud"):
+                    if j in crud:
+                        crud.discard(j)
+                        if not crud:
+                            return
+
+            field = parent.get_item("field")
+            for i in crud:
+                field[{"c": "create", "u": "update", "r": "read"}[i]] = None
+            parent.set_item("field", field)
+
+            parent = parent.parent
 
     def append_parameter(self, argv):
         v = argv.split(" ")
