@@ -149,6 +149,13 @@ def build_resource_config(api_info, properties, tag_info,
         raise Exception("Not all items(%s) of identity are in "
                         "resource's properties" % ", ".joint(v))
 
+    rid = custom_configs.get("resource_id")
+    if rid:
+        if rid not in pros:
+            raise Exception("Can't find the property(%s) in properties" % rid)
+
+        pros[rid].set_item("is_id", True)
+
     resource = _Resource(rn, service_type, params, pros, identity)
 
     resource.init(api_info, tag_info)
