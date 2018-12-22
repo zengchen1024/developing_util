@@ -37,7 +37,14 @@ class _Tree(object):
                             "node and its new name" % argv)
 
         p = self.find_param(v[0])
+        parent = p.parent
+
+        # delete old index
+        parent.delete_child(p)
+
+        # rename and add node with new index
         p.set_item("name", v[1])
+        parent.add_child(p)
 
     def delete(self, node):
         p = self.find_param(node)
