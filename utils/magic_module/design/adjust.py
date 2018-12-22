@@ -31,13 +31,19 @@ class _Tree(object):
         return obj
 
     def rename(self, argv):
+        ex_msg = "Execute cmd(rename %s) failed, " % argv
+
         v = argv.split(" ")
         if len(v) != 2:
-            raise Exception("Execute cmd(rename %s) failed, must input "
-                            "node and its new name" % argv)
+            raise Exception("%smust input node and its new name" % ex_msg)
 
         p = self.find_param(v[0])
         parent = p.parent
+
+        try:
+            self._check_duplicate_name(parent, v[1])
+        except Exception as ex:
+            raise Exception("%s%s" % (ex_msg, ex))
 
         # delete old index
         parent.delete_child(p)
@@ -86,11 +92,14 @@ class _Tree(object):
 
         self._add_members(name, obj, members)
 
+        for path in items:
+            self.delete(path)
+
     def add_parameter(self, argv):
         v = argv.split(" ")
         name = v[0]
         items = v[1:]
-        cmd = "add %s" % argv
+        ex_msg = "Execute cmd(add %s) failed, " % argv
 
         node_name = name
         parent = self
@@ -100,26 +109,36 @@ class _Tree(object):
             node_name = name[(i+1):]
 
         try:
-            parent.child(node_name)
-            n = "root_node" if parent == self else parent.get_item("name")
-            raise Exception("Execute cmd(%s) failed, the parameter(%s) is "
-                            "exist in parameter(%s)" % (cmd, node_name, n))
-        except Exception:
-            pass
+            self._check_duplicate_name(parent, node_name)
+        except Exception as ex:
+            raise Exception("%s%s" % (ex_msg, ex))
 
         members = {path: self.find_param(path) for path in items}
         try:
             self._can_merge(name, parent, members)
         except Exception as ex:
-            raise Exception("Execute cmd(%s) failed, %s" % (cmd, ex))
+            raise Exception("%s%s" % (ex_msg, ex))
 
         obj = members.values()[0].clone()
         obj.parent = parent
         obj.set_item("name", node_name)
 
         self._add_members(name, obj, members)
-
         parent.add_child(obj)
+
+        for path in items:
+            self.delete(path)
+
+    def _check_duplicate_name(self, parent, node_name):
+        try:
+            parent.child(node_name)
+        except Exception:
+            return
+
+        n = "root_node" if parent == self else parent.get_item("name")
+
+        raise Exception("the name(%s) is exist in parameter(%s)" % (
+                            node_name, n))
 
     def _can_merge(self, node_path, parent, members):
         depth = node_path.count(".") + 1
