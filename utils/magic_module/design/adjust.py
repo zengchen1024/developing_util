@@ -49,29 +49,18 @@ class _Tree(object):
         items = v[1:]
         cmd = "append %s" % argv
 
-        parent = self.find_param(name)
+        obj = self.find_param(name)
 
-        p = []
-        t = set()
-        t.add(type(parent))
-        for item in items:
-            o = self.find_param(item)
-            p.append(o)
-            t.add(type(o))
+        members = {path: self.find_param(path) for path in items}
 
-        if len(t) != 1:
-            raise Exception("Execute cmd(%s) failed, all the "
-                            "parameter should be the same type" % cmd)
+        try:
+            m = {name: obj}
+            m.update(members)
+            self._can_merge(name, obj.parent, m)
+        except Exception as ex:
+            raise Exception("Execute cmd(%s) failed, %s" % (cmd, ex))
 
-        crud = [i for i in parent.get_item("crud")]
-        for o in p:
-            for i in o.get_item("crud"):
-                if i in crud:
-                    raise Exception("Execute cmd(%s) failed, the parameter "
-                                    "members have same crud" % cmd)
-                crud.append(i)
-
-        self._add_members(parent, p)
+        self._add_members(name, obj, members)
 
     def add_parameter(self, argv):
         v = argv.split(" ")
@@ -91,41 +80,81 @@ class _Tree(object):
             n = "root_node" if parent == self else parent.get_item("name")
             raise Exception("Execute cmd(%s) failed, the parameter(%s) is "
                             "exist in parameter(%s)" % (cmd, node_name, n))
-        except:
+        except Exception:
             pass
 
-        p = []
-        t = set()
-        for item in items:
-            o = self.find_param(item)
-            p.append(o)
-            t.add(type(o))
+        members = {path: self.find_param(path) for path in items}
+        try:
+            self._can_merge(name, parent, members)
+        except Exception as ex:
+            raise Exception("Execute cmd(%s) failed, %s" % (cmd, ex))
 
-        if len(t) != 1:
-            raise Exception("Execute cmd(%s) failed, all the "
-                            "parameter should be the same type" % cmd)
-
-        crud = []
-        for o in p:
-            for i in o.get_item("crud"):
-                if i in crud:
-                    raise Exception("Execute cmd(%s) failed, the parameter "
-                                    "members have same crud" % cmd)
-                crud.append(i)
-
-        obj = p[0].clone()
+        obj = members.values()[0].clone()
         obj.parent = parent
         obj.set_item("name", node_name)
+
+        self._add_members(name, obj, members)
+
         parent.add_child(obj)
 
-        self._add_members(obj, p)
+    def _can_merge(self, node_path, parent, members):
+        depth = node_path.count(".") + 1
+        t = set()
+        for path, o in members.items():
+            t.add(type(o))
+            op = o.parent
 
-    def _add_members(self, obj, members):
-        for o in members:
-            field = [
-                "%s:%s" % (k, v) for k, v in o.get_item("field").items() if v
-            ]
-            obj.set_item("field", " ".join(field))
+            d = path.count(".") + 1
+            if d < depth:
+                raise Exception("can't move the hight level node(%s) to the "
+                                "low level node(%s)" % (path, node_path))
+
+            elif d > depth:
+                p = o
+                for i in range(d - depth):
+                    p = p.parent
+                    if isinstance(p, mm_param.MMArray):
+                        raise Exception("can't move the low level node(%s) "
+                                        "whose ancestor is an array to hight "
+                                        "level node(%s)" % (path, node_path))
+                op = p.parent
+
+            if op != parent:
+                raise Exception("can't merge node(%s) to node(%s) with "
+                                "different ancestor" % (path, node_path))
+
+        if len(t) != 1:
+            raise Exception("not all parameters are the same type")
+
+        crud = []
+        for o in members.values():
+            for i in o.get_item("crud"):
+                if i in crud:
+                    raise Exception("there are same crud")
+                crud.append(i)
+
+    def _add_members(self, node_path, obj, members):
+        depth = node_path.count(".") + 1
+        for path, o in members.items():
+            field = {}
+            for k, v in o.get_item("field").items():
+                if not v:
+                    continue
+
+                r = [v]
+                p = o
+                for i in range(path.count(".") + 1 - depth):
+                    p = p.parent
+                    f = p.get_item("field")[k]
+                    if not f:
+                        raise Exception("impossible!!, "
+                                        "parent has no field(%s)" % k)
+                    r.append(f)
+                r.reverse()
+
+                field[k] = ".".join(r)
+
+            obj.set_item("field", field)
 
             crud = o.get_item("crud")
             if "c" in crud:

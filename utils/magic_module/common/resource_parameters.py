@@ -22,7 +22,7 @@ def _set_property(p, t, kv={}):
         p.set_item(k, v)
 
     m = {"c": "create", "u": "update", "r": "read"}
-    p.set_item("field", "%s:%s" % (m[t], p.get_item("name")))
+    p.set_item("field", {m[t]: p.get_item("name")})
 
 
 def _build_params(api_info, all_models):
@@ -76,7 +76,7 @@ def _merge_create_to_get(pc, pg, level):
     if pc and pg:
         pg.set_item("required", pc.get_item("required"))
         pg.set_item("description", pc.get_item("description"))
-        pg.set_item("field", "create:%s" % pc.get_item("field")["create"])
+        pg.set_item("field", {"create": pc.get_item("field")["create"]})
 
 
 def _merge_update_to_get(pu, pcg, level):
@@ -85,9 +85,9 @@ def _merge_update_to_get(pu, pcg, level):
         if pcg.get_item("crud") == 'r':
             pcg.set_item("description", pu.get_item("description"))
 
-        pcg.set_item("field", "update:%s" % pu.get_item("field")["update"])
+        pcg.set_item("field", {"update": pu.get_item("field")["update"]})
 
 
 def _merge_update_to_create(pu, pc, level):
     if pu and pc:
-        pc.set_item("field", "update:%s" % pu.get_item("field")["update"])
+        pc.set_item("field", {"update": pu.get_item("field")["update"]})

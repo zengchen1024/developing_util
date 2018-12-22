@@ -254,20 +254,17 @@ class Basic(object):
             return v1
 
     def _set_field(self, v):
-        m = {}
-        for item in v.split(" "):
-            i = item.find(":")
-            m[item[:i]] = item[(i + 1):]
+        if not isinstance(v, dict):
+            raise Exception("Set field of parameter(%s) failed, the argument "
+                            "should be a dict" % self.get_item("name"))
 
-        r = set(m.keys()) - set(["create", "update", "read"])
+        r = set(v.keys()) - set(["create", "update", "read"])
         if r:
             raise Exception("Set field of parameter(%s) failed, "
-                            "unspport operation(%s)" % (
-                                self.get_item("name"), "".join(r)))
+                            "unspport field(%s)" % (
+                                self.get_item("name"), " ".join(r)))
 
-        obj = self._items["field"]["value"]
-        for k, v2 in m.items():
-            obj[k] = v2
+        self._items["field"]["value"].update(v)
 
     def _crud(self):
         r = [k[0] for k, v in self.get_item("field").items() if v]
