@@ -105,7 +105,7 @@ def build_resource_api_info(api_yaml, all_models, tag, custom_configs):
 
     if "list" in all_api:
         k = all_api["list"]
-        r["list"] = _list_api_info(api_yaml[k], all_models)
+        r["list"] = _list_api_info(api_yaml[k], all_models, custom_configs)
         r["list"]["api"]["op_id"] = k
 
     for i in all_api.get("others", []):
@@ -198,14 +198,18 @@ def _update_api_info(api, all_models):
     }
 
 
-def _list_api_info(api, all_models):
+def _list_api_info(api, all_models, custom_configs):
     p = api.get("response", {}).get("datatype", "")
     if p not in all_models:
         raise Exception("It can not build list parameter, "
                         "the datatype(%s) is not a struct" % p)
 
-    msg_prefix = None
     body = all_models.get(p)
+    cmds = custom_configs.get("list")
+    if cmds:
+        preprocess(body, all_models, cmds)
+
+    msg_prefix = None
     p = body
     if len(p) == 1 and p[0].get("is_array") and (
             p[0].get("items_datatype") in all_models):

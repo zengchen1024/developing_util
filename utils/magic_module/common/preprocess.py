@@ -61,7 +61,7 @@ def _change_type(index, parent, new_type):
 def preprocess(struct, all_models, cmds):
     m = {
         # "alone_parameter": lambda i, p: p[i]["alone_parameter"] = True,
-        "exclude": lambda i, p: p.pop(i),
+        "delete": lambda i, p: p.pop(i),
         "change_type": _change_type,
     }
 

@@ -99,7 +99,7 @@ class ListOp(object):
             "path": self._path,
             "identity": [{"name": i} for i in self._identity],
             "query_params": self._query_params,
-            "msg_prefix": self._msg_prefix
+            "list_msg_prefix": self._msg_prefix
         }
         for k in v.keys():
             if not v[k]:
