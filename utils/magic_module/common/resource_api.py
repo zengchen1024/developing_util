@@ -89,10 +89,14 @@ def build_resource_api_info(api_yaml, all_models, tag, custom_configs):
     r = {
         "create": _create_api_info(api_yaml[all_api["create"]],
                                    all_models, custom_configs),
-        "get": _get_api_info(api_yaml[all_api["get"]], all_models)
+
+        "get": _get_api_info(api_yaml[all_api["get"]], all_models),
+
+        "delete": _delete_api_info(api_yaml[all_api["delete"]], all_models)
     }
     r["create"]["api"]["op_id"] = all_api["create"]
     r["get"]["api"]["op_id"] = all_api["get"]
+    r["delete"]["api"]["op_id"] = all_api["delete"]
 
     if "update" in all_api:
         k = all_api["update"]
@@ -164,6 +168,12 @@ def _get_api_info(api, all_models):
         "api": api,
         "msg_prefix": msg_prefix,
         "body": body
+    }
+
+
+def _delete_api_info(api, all_models):
+    return {
+        "api": api,
     }
 
 

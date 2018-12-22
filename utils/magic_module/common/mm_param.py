@@ -51,7 +51,7 @@ class Basic(object):
                     "update": None,
                     "read": None,
                 },
-                "yaml": lambda n, k, v: _indent(n, k, "\'%s\'" % v),
+                "yaml": self._field_yaml,
             },
 
             "required": {
@@ -128,10 +128,7 @@ class Basic(object):
         for k in keys:
             v = None
 
-            if k == "field":
-                v = self._field_value()
-
-            elif k == "crud":
+            if k == "crud":
                 v = self._crud()
 
             else:
@@ -234,27 +231,21 @@ class Basic(object):
         result.pop()
         return "".join(result)
 
-    def _field_value(self):
-        k = self.get_item("name")
-        v = self.get_item("field")
+    def _field_yaml(self, indent, k, v):
 
         if not any(v.values()):
-            raise Exception("The field property of parameter(%s) is None" % k)
+            raise Exception("The field property of parameter(%s) is "
+                            "None" % self.get_item("name"))
 
-        c = v["create"]
-        u = v["update"]
-        if c and u and c != u:
-            raise Exception("The field property of parameter(%s) for "
-                            "create(%s) and update(%s) are not same" % (
-                                k, c, u))
-        v1 = c if c else u
-        r = v["read"]
-        if not v1:
-            return r
-        else:
-            if r and v1 != r:
-                return "%s/%s" % (v1, r)
-            return v1
+        r = ["%s%s:" % (' ' * indent, k),]
+        indent += 2
+
+        for k1 in ["create", "update", "read"]:
+            v1 = v[k1]
+            if v1:
+                r.append("%s%s: %s" % (' ' * indent, k1, v1))
+
+        return "\n".join(r) + "\n"
 
     def _set_field(self, v):
         if not isinstance(v, dict):

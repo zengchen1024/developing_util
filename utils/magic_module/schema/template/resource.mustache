@@ -1,7 +1,13 @@
   - !ruby/object:Api::Resource
     name: '{{name}}'
     service_type: '{{service_type}}'
-    base_url: '{{base_url}}'
+    {{#paths}}
+    paths:
+      create: {{create}}
+      delete: {{delete}}
+      update: {{update}}
+      get: {{get}}
+    {{/paths}}
     {{#msg_prefix}}
     msg_prefix:
       {{#create}}
