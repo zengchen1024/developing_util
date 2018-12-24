@@ -120,14 +120,21 @@ def _set_output(properties):
         v.traverse(_output)
 
 
-def build_resource_config(api_info, properties, tag_info,
-                          custom_configs, service_type):
+def get_resource_name(tag_info, custom_configs):
     rn = tag_info["name"]
     if custom_configs:
         rn = custom_configs.get("resource_name", rn)
+
     if isinstance(rn, unicode):
         raise Exception("Must config resouce_name in English, "
                         "because the tag is Chinese")
+
+    return rn
+
+
+def build_resource_config(api_info, properties, tag_info,
+                          custom_configs, service_type):
+    rn = get_resource_name(tag_info, custom_configs)
 
     identity = custom_configs.get("identity")
     if not identity:

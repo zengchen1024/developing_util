@@ -1,21 +1,46 @@
+import os
 import pystache
 import sys
 sys.path.append("..")
 
+
+from ansible import build_ansible_yaml
+from common.utils import normal_dir, read_yaml, write_file
 from design.resource_params_tree import generate_resource_properties
 from resource import build_resource_config
-from common.utils import read_yaml
+from resource import get_resource_name
+from terraform import build_terraform_yaml
 
 
 def run(api_path, cloud_name, tags, output):
-    if api_path[-1] != "/":
-        api_path += "/"
+    if not os.path.isdir(output):
+        os.makedirs(output)
+
+    output = normal_dir(output)
+    api_path = normal_dir(api_path)
 
     product = read_yaml(api_path + "product.yaml")
     if not product:
         raise Exception("Read (%s) failed" % (api_path + "product.yaml"))
-    service_type = product["service_type"]
 
+    all_tags = {i["name"]: i for i in product["tags"]}
+
+    tag_info = {}
+    for tag in tags.split(","):
+        tag = tag.strip().decode("utf8")
+
+        if tag not in all_tags:
+            raise Exception("Unknown tag(%s)" % tag)
+
+        tag_info[tag] = all_tags[tag]
+
+    _generate_api_yaml(api_path, cloud_name, tag_info,
+                       product["service_type"], output)
+
+    _generate_platform_yaml(api_path, tag_info, output)
+
+
+def _generate_api_yaml(api_path, cloud_name, tag_info, service_type, output):
     r = [
         _render_product(cloud_name, service_type)
     ]
@@ -23,11 +48,7 @@ def run(api_path, cloud_name, tags, output):
     api_yaml = read_yaml(api_path + "api.yaml")
     all_models = read_yaml(api_path + "models.yaml")
 
-    all_tags = {i["name"]: i for i in product["tags"]}
-    for tag in tags.split(","):
-        tag = tag.strip().decode("utf8")
-        if tag not in all_tags:
-            raise Exception("Unknown tag(%s)" % tag)
+    for tag, v in tag_info.items():
 
         custom_configs = read_yaml(api_path + tag + "_design.yaml")
 
@@ -37,11 +58,11 @@ def run(api_path, cloud_name, tags, output):
 
         r.extend(
             build_resource_config(
-                api_info, properties, all_tags[tag],
+                api_info, properties, v,
                 custom_configs, service_type)
         )
 
-    write_file(output, r)
+    write_file(output + "api.yaml", r)
 
 
 def _render_product(cloud_name, service_type):
@@ -59,15 +80,28 @@ def _render_product(cloud_name, service_type):
     return pystache.Renderer().render_path("template/product.mustache", cloud)
 
 
-def write_file(output, strs):
-    with open(output, "w") as o:
-        try:
-            o.writelines(strs)
-        except Exception:
-            try:
-                o.writelines(map(lambda s: s.encode("utf-8"), strs))
-            except Exception as ex:
-                raise Exception("Write schema result failed, %s" % ex)
+def _generate_platform_yaml(api_path, tag_info, output):
+    config = {"ansible": {}, "terraform": {}}
+
+    for tag, info in tag_info.items():
+        custom_configs = read_yaml(api_path + tag + "_design.yaml")
+
+        rn = get_resource_name(info, custom_configs)
+
+        v = custom_configs.get("ansible")
+        if v:
+            config["ansible"][rn] = v
+
+        v = custom_configs.get("terraform")
+        if v:
+            config["terraform"][rn] = v
+
+    m = {
+        "ansible": build_ansible_yaml,
+        "terraform": build_terraform_yaml
+    }
+    for k, v in config.items():
+        m[k](v, output)
 
 
 if __name__ == "__main__":
