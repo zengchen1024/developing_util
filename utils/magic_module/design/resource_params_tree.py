@@ -28,7 +28,7 @@ def _get_all_path_params(api_info):
     r = {}
     for k, v in api_info.items():
         api = v["api"]
-        if k in ["update", "get", "delete"]:
+        if k in ["update", "read", "delete"]:
             ignore.add(
                 re.findall(r"{[A-Za-z_0-9]+}", api["path"])[-1][1:][:-1])
 

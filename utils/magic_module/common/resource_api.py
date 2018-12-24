@@ -29,7 +29,7 @@ class _ResourceApi(object):
 
         r = {
             "create": apis[0][2],
-            "get": self._find_rud_api(create_path, "get", ["get"]),
+            "read": self._find_rud_api(create_path, "read", ["get"]),
             "delete": self._find_rud_api(create_path, "delete", ["delete"])
         }
 
@@ -90,12 +90,12 @@ def build_resource_api_info(api_yaml, all_models, tag, custom_configs):
         "create": _create_api_info(api_yaml[all_api["create"]],
                                    all_models, custom_configs),
 
-        "get": _get_api_info(api_yaml[all_api["get"]], all_models),
+        "read": _read_api_info(api_yaml[all_api["read"]], all_models),
 
         "delete": _delete_api_info(api_yaml[all_api["delete"]], all_models)
     }
     r["create"]["api"]["op_id"] = all_api["create"]
-    r["get"]["api"]["op_id"] = all_api["get"]
+    r["read"]["api"]["op_id"] = all_api["read"]
     r["delete"]["api"]["op_id"] = all_api["delete"]
 
     if "update" in all_api:
@@ -151,7 +151,7 @@ def _create_api_info(api, all_models, custom_configs):
     }
 
 
-def _get_api_info(api, all_models):
+def _read_api_info(api, all_models):
     p = api.get("response", {}).get("datatype", "")
     if p not in all_models:
         raise Exception("It can not build get parameter, "

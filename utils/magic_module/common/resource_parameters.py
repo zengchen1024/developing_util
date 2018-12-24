@@ -27,7 +27,7 @@ def _set_property(p, t, kv={}):
 
 def _build_params(api_info, all_models):
 
-    read = mm_param.build(api_info["get"]["body"], all_models)
+    read = mm_param.build(api_info["read"]["body"], all_models)
     for v in read.values():
         v.traverse(lambda n: _set_property(n, "r", {"required": None}))
 
