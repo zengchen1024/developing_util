@@ -1,4 +1,5 @@
 import pystache
+import re
 
 from common.utils import build_path
 
@@ -48,6 +49,8 @@ class _Resource(object):
 
             self._paths[k] = v["api"]["path"]
 
+        self._normal_path()
+
         self._create_verb = api_info["create"]["create_verb"]
 
         self._update_verb = api_info.get("update", {}).get("update_verb")
@@ -78,6 +81,17 @@ class _Resource(object):
         r.append("%sproperties:\n" % (' ' * indent))
         r.extend(_generate_yaml(self._properties, indent + 2))
         return r
+
+    def _normal_path(self):
+        for k, v in self._paths.items():
+            s = re.search(r"{project_id}/|{project}/|{tenant}", v)
+            if s:
+                v = v[s.end():]
+
+            if k in ["update", "delete", "read"]:
+                v = re.sub(r"{[A-Za-z0-9_]+}$", "{id}", v)
+
+            self._paths[k] = v
 
 
 class ListOp(object):
