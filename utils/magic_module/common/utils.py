@@ -14,7 +14,7 @@ def build_path(path):
 
 def read_yaml(f):
     if not os.path.exists(f):
-        return None
+        return {}
 
     with open(f, 'r') as stream:
         try:

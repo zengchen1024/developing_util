@@ -105,7 +105,8 @@ class ListOp(object):
         api = api_info["api"]
 
         self._path = build_path(api["path"])
-        self._query_params = [{"name": i["name"]} for i in api["query_params"]]
+        self._query_params = [
+            {"name": i["name"]} for i in api.get("query_params", {})]
         self._msg_prefix = api_info.get("msg_prefix")
 
     def to_map(self):
@@ -140,10 +141,10 @@ def get_resource_name(tag_info, custom_configs):
         rn = custom_configs.get("resource_name", rn)
 
     if isinstance(rn, unicode):
-        raise Exception("Must config resouce_name in English, "
+        raise Exception("Must config resource_name in English, "
                         "because the tag is Chinese")
 
-    return rn
+    return rn[0].upper() + rn[1:]
 
 
 def build_resource_config(api_info, properties, tag_info,
