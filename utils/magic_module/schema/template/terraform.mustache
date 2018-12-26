@@ -15,11 +15,13 @@
 overrides: !ruby/object:Provider::ResourceOverrides
 {{#resources}}
   {{name}}: !ruby/object:Provider::Terraform::ResourceOverride
+  {{#example}}
     examples:
       - !ruby/object:Provider::Terraform::Example
-        name: "as_config_basic"
-        primary_resource_id: "config"
+        name: {{name}}
+        primary_resource_id: {{resource_id}}
         is_basic: true
+  {{/example}}
   {{#has_property_override}}
     properties:
   {{/has_property_override}}

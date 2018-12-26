@@ -19,9 +19,14 @@ def run(api_path, cloud_name, tags, output):
     output = normal_dir(output)
     api_path = normal_dir(api_path)
 
+    cloud = _get_cloud_info(cloud_name)
+
     product = read_yaml(api_path + "product.yaml")
     if not product:
         raise Exception("Read (%s) failed" % (api_path + "product.yaml"))
+
+    product_info = {"service_type": product["service_type"]}
+    product_info.update(cloud)
 
     all_tags = {i["name"]: i for i in product["tags"]}
 
@@ -34,16 +39,13 @@ def run(api_path, cloud_name, tags, output):
 
         tag_info[tag] = all_tags[tag]
 
-    _generate_api_yaml(api_path, cloud_name, tag_info,
-                       product["service_type"], output)
+    _generate_api_yaml(api_path, product_info, tag_info, output)
 
-    _generate_platform_yaml(api_path, tag_info, output)
+    _generate_platform_yaml(api_path, product_info, tag_info, output)
 
 
-def _generate_api_yaml(api_path, cloud_name, tag_info, service_type, output):
-    r = [
-        _render_product(cloud_name, service_type)
-    ]
+def _generate_api_yaml(api_path, product_info, tag_info, output):
+    r = [_render_product(product_info)]
 
     api_yaml = read_yaml(api_path + "api.yaml")
     all_models = read_yaml(api_path + "models.yaml")
@@ -59,13 +61,13 @@ def _generate_api_yaml(api_path, cloud_name, tag_info, service_type, output):
         r.extend(
             build_resource_config(
                 api_info, properties, v,
-                custom_configs, service_type)
+                custom_configs, product_info["service_type"])
         )
 
     write_file(output + "api.yaml", r)
 
 
-def _render_product(cloud_name, service_type):
+def _get_cloud_info(cloud_name):
     cloud = None
     m = read_yaml("clouds.yaml")
     for i in m["clouds"]:
@@ -75,12 +77,18 @@ def _render_product(cloud_name, service_type):
     else:
         raise Exception("Unknown cloud(%s)" % cloud_name)
 
-    cloud["service_type"] = service_type
-
-    return pystache.Renderer().render_path("template/product.mustache", cloud)
+    return cloud
 
 
-def _generate_platform_yaml(api_path, tag_info, output):
+def _render_product(product_info):
+    return pystache.Renderer().render_path("template/product.mustache",
+                                           product_info)
+
+
+def _generate_platform_yaml(api_path, product_info, tag_info, output):
+    prefix = "%s_%s" % (product_info["cloud_full_name"],
+                        product_info["service_type"])
+
     config = {"ansible": {}, "terraform": {}}
 
     for tag, info in tag_info.items():
@@ -90,11 +98,17 @@ def _generate_platform_yaml(api_path, tag_info, output):
 
         v = custom_configs.get("ansible")
         if v:
-            config["ansible"][rn] = v
+            config["ansible"][rn] = {
+                "config": v,
+            }
 
         v = custom_configs.get("terraform")
         if v:
-            config["terraform"][rn] = v
+            config["terraform"][rn] = {
+                "config": v,
+                "config_dir": api_path,
+                "terraform_resource_name": "%s_%s" % (prefix, rn.lower())
+            }
 
     m = {
         "ansible": build_ansible_yaml,
