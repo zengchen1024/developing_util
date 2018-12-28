@@ -26,7 +26,7 @@ def run(api_path, cloud_name, tags, output):
 
         _, properties = generate_resource_properties(
             api_yaml, all_models, tag,
-            read_yaml(api_path + tag + "_design.yaml")
+            read_yaml(api_path + tag + ".yaml")
         )
 
         write_file(output + tag + ".yaml", _generate_yaml(properties))

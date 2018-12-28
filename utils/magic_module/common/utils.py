@@ -36,3 +36,9 @@ def write_file(output, strs):
 
 def normal_dir(path):
     return path + "/" if path[-1] != "/" else path
+
+
+def remove_none(dict_v):
+    for k in dict_v.keys():
+        if not dict_v[k]:
+            dict_v.pop(k)

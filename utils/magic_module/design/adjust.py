@@ -33,7 +33,7 @@ class _Tree(object):
     def rename(self, argv):
         ex_msg = "Execute cmd(rename %s) failed, " % argv
 
-        v = argv.split(" ")
+        v = re.sub(r" +", " ", argv).split(" ")
         if len(v) != 2:
             raise Exception("%smust input node and its new name" % ex_msg)
 

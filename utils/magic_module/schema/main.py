@@ -52,7 +52,7 @@ def _generate_api_yaml(api_path, product_info, tag_info, output):
 
     for tag, v in tag_info.items():
 
-        custom_configs = read_yaml(api_path + tag + "_design.yaml")
+        custom_configs = read_yaml(api_path + tag + ".yaml")
 
         api_info, properties = generate_resource_properties(
             api_yaml, all_models, tag, custom_configs
@@ -92,7 +92,7 @@ def _generate_platform_yaml(api_path, product_info, tag_info, output):
     config = {"ansible": {}, "terraform": {}}
 
     for tag, info in tag_info.items():
-        custom_configs = read_yaml(api_path + tag + "_design.yaml")
+        custom_configs = read_yaml(api_path + tag + ".yaml")
 
         rn = get_resource_name(info, custom_configs)
 
