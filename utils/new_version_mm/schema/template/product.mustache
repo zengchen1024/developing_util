@@ -1,0 +1,15 @@
+--- !ruby/object:Api::Product
+name: {{cloud_full_name_upper}}
+prefix: t{{service_type}}
+cloud_short_name: {{cloud_short_name}}{{!            hwc }}
+cloud_half_full_name: {{cloud_half_full_name}}{{!    huaweia }}
+cloud_full_name: {{cloud_full_name}}{{!              huaweicloud }}
+cloud_full_name_upper: {{cloud_full_name_upper}}{{!  HuaweiCloud }}
+versions:
+  - !ruby/object:Api::Product::Version
+    name: v1
+    base_url: ""
+    default: true
+scopes:
+  - "http://scopte"
+objects:

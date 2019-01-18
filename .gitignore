@@ -1,4 +1,8 @@
 # build products...
 *.py[co]
 *.b
+*.swp
+
+build
+back
 

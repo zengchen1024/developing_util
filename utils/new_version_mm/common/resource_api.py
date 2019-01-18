@@ -147,7 +147,7 @@ def _create_api_info(api, all_models, custom_configs):
         "api": api,
         "msg_prefix": msg_prefix,
         "body": body,
-        "create_verb": api["method"].upper()
+        "verb": api["method"].upper()
     }
 
 
@@ -194,7 +194,7 @@ def _update_api_info(api, all_models):
         "api": api,
         "msg_prefix": msg_prefix,
         "body": body,
-        "update_verb": api["method"].upper()
+        "verb": api["method"].upper()
     }
 
 

@@ -1,0 +1,9 @@
+      {{api_key}}: !ruby/object:Api::{{api_type}}
+        name: "{{name}}"
+        path: "{{path}}"
+        {{#verb}}
+        verb: :{{verb}}
+        {{/verb}}
+        {{#resource_id_path}}
+        resource_id_path: {{resource_id_path}}
+        {{/resource_id_path}}

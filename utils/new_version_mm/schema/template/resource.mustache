@@ -1,0 +1,48 @@
+  - !ruby/object:Api::Resource
+    name: '{{name}}'
+    service_type: '{{service_type}}'
+    {{#paths}}
+    paths:
+      create: {{create}}
+      delete: {{delete}}
+      {{#update}}
+      update: {{update}}
+      {{/update}}
+      read: {{read}}
+    {{/paths}}
+    {{#msg_prefix}}
+    msg_prefix:
+      {{#create}}
+      create: {{create}}
+      {{/create}}
+      {{#update}}
+      update: {{update}}
+      {{/update}}
+      {{#read}}
+      read: {{read}}
+      {{/read}}
+    {{/msg_prefix}}
+    {{#create_verb}}
+    create_verb: :{{create_verb}}
+    {{/create_verb}}
+    {{#update_verb}}
+    update_verb: :{{update_verb}}
+    {{/update_verb}}
+    {{#description}}
+    description: {{{description}}}
+    {{/description}}
+    {{#list_info}}
+    list_op: !ruby/object:Api::ListOp
+      path: {{path}}
+      query_params:
+      {{#query_params}}
+        - {{name}}
+      {{/query_params}}
+      identity:
+      {{#identity}}
+        - {{name}}
+      {{/identity}}
+      {{#list_msg_prefix}}
+      msg_prefix: {{list_msg_prefix}}
+      {{/list_msg_prefix}}
+    {{/list_info}}
