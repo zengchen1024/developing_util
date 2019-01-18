@@ -115,18 +115,6 @@ class ListOp(object):
         return v
 
 
-def _set_output(properties):
-    def _output(n):
-        p = n.parent
-        if n.get_item("crud") == 'r' and (
-                p is None or p.get_item("crud") != 'r'):
-            n.set_item("output", True)
-
-    for v in properties.values():
-        v.parent = None
-        v.traverse(_output)
-
-
 def get_resource_name(tag_info, custom_configs):
     rn = tag_info["name"]
     if custom_configs:
@@ -155,8 +143,6 @@ def build_resource_config(api_info, properties, tag_info,
 
         else:
             params[k] = v
-
-    _set_output(pros)
 
     v = set(identity) - set([v.get_item("name") for v in pros.values()])
     if v:

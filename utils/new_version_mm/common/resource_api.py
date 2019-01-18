@@ -108,11 +108,12 @@ def build_resource_api_info(api_yaml, all_models, tag, custom_configs):
         r["list"] = _list_api_info(api_yaml[k], all_models, custom_configs)
         r["list"]["api"]["op_id"] = k
 
+    '''
     for i in all_api.get("others", []):
         v = api_yaml[i]
         v["op_id"] = i
-        r["other_" + i] = {"api": v}
-
+        r[i] = {"api": v}
+    '''
     return r
 
 
@@ -147,7 +148,8 @@ def _create_api_info(api, all_models, custom_configs):
         "api": api,
         "msg_prefix": msg_prefix,
         "body": body,
-        "verb": api["method"].upper()
+        "verb": api["method"].upper(),
+        "crud": "c"
     }
 
 
@@ -167,13 +169,15 @@ def _read_api_info(api, all_models):
     return {
         "api": api,
         "msg_prefix": msg_prefix,
-        "body": body
+        "body": body,
+        "crud": "r"
     }
 
 
 def _delete_api_info(api, all_models):
     return {
         "api": api,
+        "crud": "d"
     }
 
 
@@ -194,7 +198,8 @@ def _update_api_info(api, all_models):
         "api": api,
         "msg_prefix": msg_prefix,
         "body": body,
-        "verb": api["method"].upper()
+        "verb": api["method"].upper(),
+        "crud": "u"
     }
 
 
@@ -220,4 +225,5 @@ def _list_api_info(api, all_models, custom_configs):
         "api": api,
         "msg_prefix": msg_prefix,
         "body": body,
+        "crud": 'r'
     }

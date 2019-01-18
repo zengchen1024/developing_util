@@ -17,6 +17,9 @@ def generate_resource_properties(api_yaml, all_models, tag, custom_configs):
 
     adjust(custom_configs.get("adjust", []), properties)
 
+    _set_property(api_info, properties)
+    _set_output(properties)
+
     _rename_path_params(api_info["create"]["api"]["op_id"],
                         path_params, properties)
 
@@ -61,7 +64,7 @@ def _rename_path_params(create_op_id, params, properties):
             for item in properties.values():
                 path = item.path.get(create_op_id)
                 if path is None:
-                     continue
+                    continue
 
                 if n == path.split(".")[-1]:
                     v["name"] = item.get_item("name")
@@ -70,3 +73,47 @@ def _rename_path_params(create_op_id, params, properties):
             else:
                 raise Exception("Can't find the path paarameter(%s) of"
                                 " api(%s)" % (n, k))
+
+
+def _set_output(properties):
+    def _output(n):
+        p = n.parent
+        if n.get_item("crud") == 'r' and (
+                p is None or p.get_item("crud") != 'r'):
+            n.set_item("output", True)
+
+    for v in properties.values():
+        v.parent = None
+        v.traverse(_output)
+
+
+def _set_property(api_info, properties):
+    info = {v["api"]["op_id"]: v["crud"] for v in api_info.values()}
+
+    def _set_crud(n, leaf):
+        m = {"c": 0, "r": 0, "u": 0, "d": 0}
+
+        if leaf:
+            for v in n.path:
+                m[info[v]] = 1
+
+        else:
+            for i in n.childs():
+                for j in i.get_item("crud"):
+                    m[j] = 1
+
+        n.set_item("crud", "".join([i for i in "cru" if m[i]]))
+
+    def _set_field(n):
+        if n.get_item("crud").find("r") != -1:
+            for k, v in n.path.items():
+                if info[k] == "r":
+                    n.set_item("field", v)
+
+    def callbacks(n, leaf):
+        _set_crud(n, leaf)
+        _set_field(n)
+
+    for i in properties.values():
+        i.parent = None
+        i.post_traverse(callbacks)

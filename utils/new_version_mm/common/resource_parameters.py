@@ -44,7 +44,7 @@ def _build_read_params(api_info, all_models):
     api = api_info["read"]
 
     def _init_node(n):
-        _set_property(n, {"required": None, "crud": "r"})
+        _set_property(n, {"required": None})
         _set_path(n, api["api"]["op_id"], api["msg_prefix"])
 
     read = mm_param.build(api["body"], all_models)
@@ -58,7 +58,6 @@ def _build_create_params(api_info, all_models):
     api = api_info["create"]
 
     def _init_node(n):
-        _set_property(n, {"crud": "c"})
         _set_path(n, api["api"]["op_id"], api["msg_prefix"])
 
     create = mm_param.build(api["body"], all_models)
@@ -71,7 +70,7 @@ def _build_update_params(api_info, all_models):
     api = api_info["update"]
 
     def _init_node(n):
-        _set_property(n, {"required": None, "crud": "u"})
+        _set_property(n, {"required": None})
         _set_path(n, api["api"]["op_id"], api["msg_prefix"])
 
     update = mm_param.build(api["body"], all_models)
@@ -112,21 +111,14 @@ def _merge_create_to_read(pc, pr, level):
     if pc and pr:
         pr.set_item("required", pc.get_item("required"))
         pr.set_item("description", pc.get_item("description"))
-        pr.set_item("crud", pr.get_item("crud") + pc.get_item("crud"))
         pr.path.update(pc.path)
 
 
 def _merge_update_to_cr(pu, pcr, level):
     if pu and pcr:
-
-        if pcr.get_item("crud") == 'r':
-            pcr.set_item("description", pu.get_item("description"))
-
-        pcr.set_item("crud", pcr.get_item("crud") + pu.get_item("crud"))
         pcr.path.update(pu.path)
 
 
 def _merge_update_to_create(pu, pc, level):
     if pu and pc:
-        pc.set_item("crud", pc.get_item("crud") + pu.get_item("crud"))
         pc.path.update(pu.path)

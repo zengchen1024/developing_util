@@ -41,11 +41,6 @@ class Basic(object):
                 "yaml": lambda n, k, v: _indent(n, k, str(v).lower()),
             },
 
-            "input": {
-                "value": None,
-                "yaml": lambda n, k, v: _indent(n, k, str(v).lower()),
-            },
-
             "field": {
                 "value": None,
                 "yaml": lambda n, k, v: _indent(n, k, '\'' + v + '\''),
@@ -54,16 +49,6 @@ class Basic(object):
             "required": {
                 "value": None,
                 "yaml": lambda n, k, v: _indent(n, k, str(v).lower()),
-            },
-
-            "update_verb": {
-                "value": None,
-                "yaml": lambda n, k, v: _indent(n, k, '\'' + v + '\''),
-            },
-
-            "update_url": {
-                "value": None,
-                "yaml": lambda n, k, v: _indent(n, k, '\'' + v + '\''),
             },
 
             "crud": {
@@ -175,6 +160,9 @@ class Basic(object):
 
     def traverse(self, callback):
         callback(self)
+
+    def post_traverse(self, callback):
+        callback(self, leaf=True)
 
     def child(self, key):
         raise Exception("Unsupported method of child")
@@ -451,6 +439,12 @@ class MMNestedObject(Basic):
         for k, v in self._items["properties"]["value"].items():
             v.traverse(callback)
 
+    def post_traverse(self, callback):
+        for k, v in self._items["properties"]["value"].items():
+            v.post_traverse(callback)
+
+        callback(self, leaf=False)
+
 
 class MMArray(Basic):
     def __init__(self):
@@ -596,6 +590,14 @@ class MMArray(Basic):
 
         for k, v in self_item_type.items():
             v.traverse(callback)
+
+    def post_traverse(self, callback):
+        self_item_type = self._items["item_type"]["value"]
+        if isinstance(self_item_type, dict):
+            for k, v in self_item_type.items():
+                v.post_traverse(callback)
+
+        callback(self, leaf=isinstance(self_item_type, str))
 
 
 _mm_type_map = {
