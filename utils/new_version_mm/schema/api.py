@@ -34,7 +34,8 @@ class ApiBase(object):
         self._verb = api_info.get("verb")
         self._msg_prefix = api_info.get("msg_prefix", "")
 
-        self._parameters = mm_param.build(api_info.get("body", []), all_models)
+        self._parameters = mm_param.build(
+            api_info.get("req_body", []), all_models)
 
         if self._parameters:
             self._build_field(properties)

@@ -47,7 +47,7 @@ def _build_read_params(api_info, all_models):
         _set_property(n, {"required": None})
         _set_path(n, api["api"]["op_id"], api["msg_prefix"])
 
-    read = mm_param.build(api["body"], all_models)
+    read = mm_param.build(api["resp_body"], all_models)
     for v in read.values():
         v.traverse(_init_node)
 
@@ -60,7 +60,7 @@ def _build_create_params(api_info, all_models):
     def _init_node(n):
         _set_path(n, api["api"]["op_id"], api["msg_prefix"])
 
-    create = mm_param.build(api["body"], all_models)
+    create = mm_param.build(api["req_body"], all_models)
     for v in create.values():
         v.traverse(_init_node)
 
@@ -73,7 +73,7 @@ def _build_update_params(api_info, all_models):
         _set_property(n, {"required": None})
         _set_path(n, api["api"]["op_id"], api["msg_prefix"])
 
-    update = mm_param.build(api["body"], all_models)
+    update = mm_param.build(api["req_body"], all_models)
     for v in update.values():
         v.traverse(_init_node)
 

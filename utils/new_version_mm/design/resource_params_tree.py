@@ -47,7 +47,7 @@ def _get_all_path_params(api_info):
 
 
 def _check_path_params(params, api_info):
-    create_params = [i["name"] for i in api_info["create"]["body"]]
+    create_params = [i["name"] for i in api_info["create"]["req_body"]]
     for k, ps in params.items():
         for v in ps:
             n = v["name"]

@@ -147,7 +147,7 @@ def _create_api_info(api, all_models, custom_configs):
     return {
         "api": api,
         "msg_prefix": msg_prefix,
-        "body": body,
+        "req_body": body,
         "verb": api["method"].upper(),
         "crud": "c"
     }
@@ -169,7 +169,7 @@ def _read_api_info(api, all_models):
     return {
         "api": api,
         "msg_prefix": msg_prefix,
-        "body": body,
+        "resp_body": body,
         "crud": "r"
     }
 
@@ -197,7 +197,7 @@ def _update_api_info(api, all_models):
     return {
         "api": api,
         "msg_prefix": msg_prefix,
-        "body": body,
+        "req_body": body,
         "verb": api["method"].upper(),
         "crud": "u"
     }
@@ -224,6 +224,6 @@ def _list_api_info(api, all_models, custom_configs):
     return {
         "api": api,
         "msg_prefix": msg_prefix,
-        "body": body,
+        "resp_body": body,
         "crud": 'r'
     }
