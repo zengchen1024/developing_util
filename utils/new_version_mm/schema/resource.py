@@ -63,34 +63,17 @@ def get_resource_name(tag_info, custom_configs):
 
 def build_resource_config(api_info, properties, tag_info,
                           custom_configs, service_type):
-    rn = get_resource_name(tag_info, custom_configs)
-
-    identity = custom_configs.get("identity")
-    if not identity:
-        raise Exception("Must config identity to verify the rsource")
-
     params = {}
     pros = {}
     for k, v in properties.items():
         if "r" in v.get_item("crud"):
             pros[k] = v
-
         else:
             params[k] = v
 
-    v = set(identity) - set([v.get_item("name") for v in pros.values()])
-    if v:
-        raise Exception("Not all items(%s) of identity are in "
-                        "resource's properties" % ", ".joint(v))
-
-    rid = custom_configs.get("resource_id")
-    if rid:
-        if rid not in pros:
-            raise Exception("Can't find the property(%s) in properties" % rid)
-
-        pros[rid].set_item("is_id", True)
-
-    resource = _Resource(rn, service_type, tag_info.get("description", ""),
-                         params, pros)
+    resource = _Resource(
+        get_resource_name(tag_info, custom_configs),
+        service_type, tag_info.get("description", ""),
+        params, pros)
 
     return resource.render()

@@ -1,14 +1,14 @@
 import re
 
 from adjust import adjust
-from common.resource_api import build_resource_api_info
-from common.resource_parameters import build_resource_params
+from common.api import build_resource_api_info
+from common.parameter import build_resource_params
 
 
 def generate_resource_properties(api_yaml, all_models, tag, custom_configs):
 
-    api_info = build_resource_api_info(api_yaml, all_models, tag,
-                                       custom_configs.get("preprocess", {}))
+    api_info = build_resource_api_info(api_yaml, all_models,
+                                       custom_configs.get("apis", {}))
 
     path_params = _get_all_path_params(api_info)
     _check_path_params(path_params, api_info)
@@ -20,7 +20,7 @@ def generate_resource_properties(api_yaml, all_models, tag, custom_configs):
     _set_property(api_info, properties)
     _set_output(properties)
 
-    _rename_path_params(api_info["create"]["api"]["op_id"],
+    _rename_path_params(api_info["create"]["op_id"],
                         path_params, properties)
 
     return api_info, properties
@@ -41,13 +41,13 @@ def _get_all_path_params(api_info):
             if i["name"] not in ignore:
                 p.append(i)
         if p:
-            r[api["op_id"]] = p
+            r[v["op_id"]] = p
 
     return r
 
 
 def _check_path_params(params, api_info):
-    create_params = [i["name"] for i in api_info["create"]["req_body"]]
+    create_params = [i["name"] for i in api_info["create"]["body"]]
     for k, ps in params.items():
         for v in ps:
             n = v["name"]
@@ -88,7 +88,7 @@ def _set_output(properties):
 
 
 def _set_property(api_info, properties):
-    info = {v["api"]["op_id"]: v["crud"] for v in api_info.values()}
+    info = {v["op_id"]: v["crud"] for v in api_info.values()}
 
     def _set_crud(n, leaf):
         m = {"c": 0, "r": 0, "u": 0, "d": 0}

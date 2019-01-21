@@ -29,13 +29,14 @@ class ApiBase(object):
     def init(self, api_info, all_models, properties):
         api = api_info["api"]
         self._path = api["path"]
-        self._op_id = api["op_id"]
-
-        self._verb = api_info.get("verb")
+        self._verb = api["method"].upper()
+        self._op_id = api_info["op_id"]
         self._msg_prefix = api_info.get("msg_prefix", "")
 
-        self._parameters = mm_param.build(
-            api_info.get("req_body", []), all_models)
+        crud = api_info["crud"]
+        if crud.find("c") != -1 or crud.find("u") != -1:
+            self._parameters = mm_param.build(
+                api_info.get("body", []), all_models)
 
         if self._parameters:
             self._build_field(properties)
@@ -106,14 +107,15 @@ class ApiBase(object):
             o.traverse(_set_field)
 
 
-class CreateApi(ApiBase):
-    def __init__(self, name):
-        super(CreateApi, self).__init__(name)
+class ApiCreate(ApiBase):
+    def __init__(self):
+        super(ApiCreate, self).__init__("create")
 
         self._resource_id_path = ""
 
     def _render_data(self):
-        v = super(CreateApi, self)._render_data()
+        v = super(ApiCreate, self)._render_data()
+
         v.update({
             "resource_id_path": self._resource_id_path,
             "api_type":         "ApiCreate"
@@ -121,21 +123,21 @@ class CreateApi(ApiBase):
         return v
 
     def init(self, api_info, all_models, properties):
-        super(CreateApi, self).init(api_info, all_models, properties)
+        super(ApiCreate, self).init(api_info, all_models, properties)
 
         self._resource_id_path = api_info.get("resource_id_path")
 
 
-class ListApi(ApiBase):
-    def __init__(self, name):
-        super(ListApi, self).__init__(name)
+class ApiList(ApiBase):
+    def __init__(self):
+        super(ApiList, self).__init__("list")
 
         self._query_params = None
-        self._identity = None
+        self._identity = []
         self._msg_prefix = ""
 
     def _render_data(self):
-        v = super(ListApi, self)._render_data()
+        v = super(ApiList, self)._render_data()
 
         v.update({
             "identity": [{"name": i} for i in self._identity],
@@ -148,7 +150,7 @@ class ListApi(ApiBase):
         return v
 
     def init(self, api_info, all_models, properties):
-        super(ListApi, self).init(api_info, all_models, properties)
+        super(ApiList, self).init(api_info, all_models, properties)
 
         api = api_info["api"]
         self._query_params = [
@@ -159,17 +161,19 @@ class ListApi(ApiBase):
 def build_resource_api_config(api_info, all_models, properties):
     r = ["    apis:\n"]
 
-    ca = CreateApi("create")
-    ca.init(api_info["create"], all_models, properties)
-    r.extend(ca.render())
-
     for k, v in api_info.items():
-        if k in ["create", "list"]:
-            continue
+        t = v.get("type")
 
-        obj = ApiBase(k)
+        if not t:
+            pass
+        elif t == "create":
+            obj = ApiCreate()
+        elif t == "list":
+            obj = ApiList()
+        else:
+            obj = ApiBase(t)
+
         obj.init(v, all_models, properties)
-
         r.extend(obj.render())
 
     return r
