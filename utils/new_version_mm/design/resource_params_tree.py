@@ -20,59 +20,51 @@ def generate_resource_properties(api_yaml, all_models, tag, custom_configs):
     _set_property(api_info, properties)
     _set_output(properties)
 
-    _rename_path_params(api_info["create"]["op_id"],
-                        path_params, properties)
+    _rename_path_params(api_info, path_params, properties)
 
     return api_info, properties
 
 
 def _get_all_path_params(api_info):
-    ignore = set(["project", "project_id", "tenant"])
-
     r = {}
     for k, v in api_info.items():
-        api = v["api"]
-        if k in ["update", "read", "delete"]:
-            ignore.add(
-                re.findall(r"{[A-Za-z_0-9]+}", api["path"])[-1][1:][:-1])
+        for p in re.findall(r"{[^/]*}", v["api"]["path"]):
+            r.setdefault(p[1:][:-1], []).append(k)
 
-        p = []
-        for i in api.get("path_params", []):
-            if i["name"] not in ignore:
-                p.append(i)
-        if p:
-            r[v["op_id"]] = p
-
+    r.pop("id", None)
     return r
 
 
 def _check_path_params(params, api_info):
     create_params = [i["name"] for i in api_info["create"]["body"]]
-    for k, ps in params.items():
-        for v in ps:
-            n = v["name"]
-            if n not in create_params:
-                raise Exception("The path parameters(%s) of api(%s) doesn't "
-                                "exist in the create parameters" % (n, k))
+
+    for n, k in params:
+        if n not in create_params:
+            raise Exception("The path parameters(%s) of api(%s) doesn't exist "
+                            "in the create parameters" % (n, ", ".join(k)))
 
 
-def _rename_path_params(create_op_id, params, properties):
-    for k, ps in params.items():
-        for v in ps:
-            n = v["name"]
+def _rename_path_params(api_info, params, properties):
+    create_op_id = api_info["create"]["op_id"]
 
-            for item in properties.values():
-                path = item.path.get(create_op_id)
-                if path is None:
-                    continue
+    for n, ks in params.items():
+        for item in properties.values():
+            path = item.path.get(create_op_id)
+            if path is None:
+                continue
 
-                if n == path.split(".")[-1]:
-                    v["name"] = item.get_item("name")
-                    break
+            if n == path.split(".")[-1]:
+                if n != item.get_item("name"):
+                    for k in ks:
+                        api_info[k]["api"]["path"] = re.sub(
+                            r"{%s}" % n, "{%s}" % item.get_item("name"),
+                            api_info[k]["api"]["path"]
+                        )
+                break
 
-            else:
-                raise Exception("Can't find the path paarameter(%s) of"
-                                " api(%s)" % (n, k))
+        else:
+            raise Exception("Can't find the path paarameter(%s) of"
+                            " api(%s)" % (n, ", ".join(k)))
 
 
 def _set_output(properties):

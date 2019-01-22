@@ -102,7 +102,7 @@ def _other_api_info(api, all_models, custom_config):
     r = {}
     if p in all_models:
         msg_prefix, body = _build_parameter(
-            all_models.get(p), all_models, custom_configs)
+            all_models.get(p), all_models, custom_config)
 
         r["msg_prefix"] = msg_prefix
         r["body"] = body
@@ -115,6 +115,31 @@ def _other_api_info(api, all_models, custom_config):
         r["exclude_for_schema"] = True
 
     return r
+
+
+def _remove_project(api):
+    s = re.search(r"{project_id}/|{project}/|{tenant}/", api["path"])
+    if s:
+        api["path"] = api["path"][s.end():]
+
+
+def _replace_resource_id(apis):
+    rid = ""
+    for i in ["read", "delete", "update"]:
+        api = apis.get(i)
+        if not api:
+            continue
+
+        path = api["api"]["path"]
+        s = re.search(r"{[A-Za-z0-9_]+}$", path)
+        if s:
+            rid = path[s.start() + 1: s.end() - 1]
+            break
+    else:
+        return
+
+    for i in apis.values():
+        i["api"]["path"] = re.sub(r"{%s}" % rid, "{id}", i["api"]["path"])
 
 
 def build_resource_api_info(api_yaml, all_models, custom_configs):
@@ -145,9 +170,12 @@ def build_resource_api_info(api_yaml, all_models, custom_configs):
         r["api"] = api
         r["verb"] = api["method"].upper()
 
+        _remove_project(api)
+
         k1 = t
         if not k1:
             k1 = k
         result[k1] = r
 
+    _replace_resource_id(result)
     return result
