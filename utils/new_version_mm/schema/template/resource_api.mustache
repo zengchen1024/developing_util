@@ -7,3 +7,39 @@
         {{#resource_id_path}}
         resource_id_path: {{resource_id_path}}
         {{/resource_id_path}}
+        {{#async}}
+        async: !ruby/object:Api::Async
+          {{#query_status}}
+          query_status: !ruby/object:Api::Async::Operation
+            path: '{{path}}'
+            {{#has_path_parameter}}
+            path_parameter:
+            {{#path_parameter}}
+              {{key}}: '{{value}}'
+            {{/path_parameter}}
+            {{/has_path_parameter}}
+            {{#query_interval_ms}}
+            query_interval_ms: {{query_interval_ms}}
+            {{/query_interval_ms}}
+          {{/query_status}}
+          {{#check_status}}
+          check_status: !ruby/object:Api::Async::Status
+            field: '{{field}}'
+            {{#has_complete}}
+            complete:
+            {{#complete}}
+              - '{{value}}'
+            {{/complete}}
+            {{/has_complete}}
+            {{#has_pending}}
+            pending:
+            {{#pending}}
+              - '{{value}}'
+            {{/pending}}
+            {{/has_pending}}
+          {{/check_status}}
+          {{#result}}
+            result: !ruby/object:Api::Async::Result
+              field: '{{result}}'
+          {{/result}}
+        {{/async}}

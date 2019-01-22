@@ -12,6 +12,7 @@ class ApiBase(object):
         self._op_id = ""
         self._msg_prefix = ""
         self._parameters = None
+        self._async = None
 
     def render(self):
         v = self._render_data()
@@ -26,7 +27,7 @@ class ApiBase(object):
 
         return r
 
-    def init(self, api_info, all_models, properties):
+    def init(self, api_info, all_models, properties, custom_config):
         api = api_info["api"]
         self._path = api["path"]
         self._verb = api["method"].upper()
@@ -41,6 +42,22 @@ class ApiBase(object):
         if self._parameters:
             self._build_field(properties)
 
+        ac = custom_config.get("async")
+        if ac:
+            p = ac.get("query_status", {}).get("path_parameter")
+            if p:
+                r = [{"key": k, "value": v} for k, v in p.items()]
+                ac["query_status"]["path_parameter"] = r
+                ac["query_status"]["has_path_parameter"] = True
+
+            for k in ["pending", "complete"]:
+                p = ac.get("check_status", {}).get(k)
+                if p:
+                    ac["check_status"][k] = [{"value": v} for v in p]
+                    ac["check_status"]["has_"+ k] = True
+
+            self._async = ac
+
     def _render_data(self):
         return {
             "api_key":   self._name,
@@ -48,6 +65,7 @@ class ApiBase(object):
             "name":      self._name,
             "path":      self._path,
             "verb":      self._verb,
+            "async":     self._async
         }
 
     def _generate_parameter_config(self):
@@ -122,8 +140,9 @@ class ApiCreate(ApiBase):
         })
         return v
 
-    def init(self, api_info, all_models, properties):
-        super(ApiCreate, self).init(api_info, all_models, properties)
+    def init(self, api_info, all_models, properties, custom_config):
+        super(ApiCreate, self).init(api_info, all_models,
+                                    properties, custom_config)
 
         self._resource_id_path = api_info.get("resource_id_path")
 
@@ -149,8 +168,9 @@ class ApiList(ApiBase):
 
         return v
 
-    def init(self, api_info, all_models, properties):
-        super(ApiList, self).init(api_info, all_models, properties)
+    def init(self, api_info, all_models, properties, custom_config):
+        super(ApiList, self).init(api_info, all_models,
+                                  properties, custom_config)
 
         api = api_info["api"]
         self._query_params = [
@@ -158,7 +178,7 @@ class ApiList(ApiBase):
         self._msg_prefix = api_info.get("msg_prefix")
 
 
-def build_resource_api_config(api_info, all_models, properties):
+def build_resource_api_config(api_info, all_models, properties, custom_config):
     r = ["    apis:\n"]
 
     for k, v in api_info.items():
@@ -173,7 +193,7 @@ def build_resource_api_config(api_info, all_models, properties):
         else:
             obj = ApiBase(t)
 
-        obj.init(v, all_models, properties)
+        obj.init(v, all_models, properties, custom_config["apis"][v["op_id"]])
         r.extend(obj.render())
 
     return r

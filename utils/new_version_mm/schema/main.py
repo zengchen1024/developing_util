@@ -66,7 +66,8 @@ def _generate_api_yaml(api_path, product_info, tag_info, output):
         )
 
         r.extend(
-            build_resource_api_config(api_info, all_models, properties)
+            build_resource_api_config(api_info, all_models,
+                                      properties, custom_configs)
         )
 
     write_file(output + "api.yaml", r)
