@@ -2,15 +2,26 @@
         name: "{{name}}"
         path: "{{path}}"
         {{#verb}}
-        verb: :{{verb}}
+        verb: "{{verb}}"
         {{/verb}}
         {{#resource_id_path}}
         resource_id_path: {{resource_id_path}}
         {{/resource_id_path}}
+        {{#action}}
+          {{#when}}
+        when: "{{when}}"
+          {{/when}}
+          {{#has_path_parameter}}
+        path_parameter:
+            {{#path_parameter}}
+          {{key}}: '{{value}}'
+            {{/path_parameter}}
+          {{/has_path_parameter}}
+        {{/action}}
         {{#async}}
         async: !ruby/object:Api::Async
           {{#query_status}}
-          query_status: !ruby/object:Api::Async::Operation
+          operation: !ruby/object:Api::Async::Operation
             path: '{{path}}'
             {{#has_path_parameter}}
             path_parameter:
@@ -19,11 +30,11 @@
             {{/path_parameter}}
             {{/has_path_parameter}}
             {{#query_interval_ms}}
-            query_interval_ms: {{query_interval_ms}}
+            wait_ms: {{query_interval_ms}}
             {{/query_interval_ms}}
           {{/query_status}}
           {{#check_status}}
-          check_status: !ruby/object:Api::Async::Status
+          status_check: !ruby/object:Api::Async::Status
             field: '{{field}}'
             {{#has_complete}}
             complete:

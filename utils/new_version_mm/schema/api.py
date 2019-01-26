@@ -27,7 +27,7 @@ class ApiBase(object):
 
         return r
 
-    def init(self, api_info, all_models, properties, custom_config):
+    def init(self, api_info, all_models, properties):
         api = api_info["api"]
         self._path = api["path"]
         self._verb = api["method"].upper()
@@ -40,9 +40,14 @@ class ApiBase(object):
                 api_info.get("body", []), all_models)
 
         if self._parameters:
-            self._build_field(properties)
+            if not api_info.get("exclude_for_schema"):
+                self._build_field(properties)
 
-        ac = custom_config.get("async")
+            v = api_info.get("default_value")
+            if v:
+                self._set_default_valuse(v)
+
+        ac = api_info.get("async")
         if ac:
             p = ac.get("query_status", {}).get("path_parameter")
             if p:
@@ -54,7 +59,7 @@ class ApiBase(object):
                 p = ac.get("check_status", {}).get(k)
                 if p:
                     ac["check_status"][k] = [{"value": v} for v in p]
-                    ac["check_status"]["has_"+ k] = True
+                    ac["check_status"]["has_" + k] = True
 
             self._async = ac
 
@@ -97,14 +102,14 @@ class ApiBase(object):
 
         raise Exception("no child with key(%s)" % key)
 
+    def _find_param(self, path):
+        obj = self
+        for k in path.split('.'):
+            obj = obj.child(k.strip())
+
+        return obj
+
     def _build_field(self, properties):
-
-        def _find_param(path):
-            obj = self
-            for k in path.split('.'):
-                obj = obj.child(k.strip())
-
-            return obj
 
         def _set_field(o):
             target = o.path.get(self._op_id)
@@ -117,12 +122,16 @@ class ApiBase(object):
                 o = o.parent
             path.reverse()
 
-            _find_param(target).set_item("field", ".".join(path))
+            self._find_param(target).set_item("field", ".".join(path))
 
         for o in properties.values():
             o.parent = None
 
             o.traverse(_set_field)
+
+    def _set_default_valuse(self, values):
+        for k, v in values.items():
+            self._find_param(k).set_item("default", v)
 
 
 class ApiCreate(ApiBase):
@@ -140,11 +149,39 @@ class ApiCreate(ApiBase):
         })
         return v
 
-    def init(self, api_info, all_models, properties, custom_config):
-        super(ApiCreate, self).init(api_info, all_models,
-                                    properties, custom_config)
+    def init(self, api_info, all_models, properties):
+        super(ApiCreate, self).init(api_info, all_models, properties)
 
         self._resource_id_path = api_info.get("resource_id_path")
+
+
+class ApiAction(ApiBase):
+    def __init__(self):
+        super(ApiAction, self).__init__("action")
+
+        self._when = ""
+        self._path_parameter = None
+
+    def _render_data(self):
+        v = super(ApiAction, self)._render_data()
+        v["api_type"] = "ApiAction"
+
+        data = {"when": self._when}
+        p = self._path_parameter
+        if p:
+            r = [{"key": k, "value": i} for k, i in p.items()]
+            data["path_parameter"] = r
+            data["has_path_parameter"] = True
+
+        v["action"] = data
+        return v
+
+    def init(self, api_info, all_models, properties):
+        super(ApiAction, self).init(api_info, all_models, properties)
+
+        self._name = api_info["op_id"]
+        self._when = api_info.get("when")
+        self._path_parameter = api_info.get("path_parameter")
 
 
 class ApiList(ApiBase):
@@ -168,9 +205,8 @@ class ApiList(ApiBase):
 
         return v
 
-    def init(self, api_info, all_models, properties, custom_config):
-        super(ApiList, self).init(api_info, all_models,
-                                  properties, custom_config)
+    def init(self, api_info, all_models, properties):
+        super(ApiList, self).init(api_info, all_models, properties)
 
         api = api_info["api"]
         self._query_params = [
@@ -184,8 +220,12 @@ def build_resource_api_config(api_info, all_models, properties, custom_config):
     for k, v in api_info.items():
         t = v.get("type")
 
+        obj = None
         if not t:
-            pass
+            if v.get("when"):
+                obj = ApiAction()
+            else:
+                continue
         elif t == "create":
             obj = ApiCreate()
         elif t == "list":
@@ -193,7 +233,7 @@ def build_resource_api_config(api_info, all_models, properties, custom_config):
         else:
             obj = ApiBase(t)
 
-        obj.init(v, all_models, properties, custom_config["apis"][v["op_id"]])
+        obj.init(v, all_models, properties)
         r.extend(obj.render())
 
     return r

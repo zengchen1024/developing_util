@@ -56,6 +56,11 @@ class Basic(object):
                 "yaml": lambda n, k, v: _indent(n, k, "\'%s\'" % v),
             },
 
+            "default": {
+                "value": None,
+                "yaml": lambda n, k, v: _indent(n, k, "\'%s\'" % v),
+            },
+
             "is_id": {
                 "value": None,
                 "yaml": lambda n, k, v: _indent(n, k, str(v).lower()),
@@ -83,6 +88,11 @@ class Basic(object):
     @property
     def path(self):
         return self._path
+
+    @property
+    def real_type(self):
+        s = self._mm_type
+        return s[s.find(":") + 1:]
 
     def init(self, param, parent):
         self._parent = parent
@@ -149,7 +159,7 @@ class Basic(object):
         return self._items[k]["value"] if k in self._items else default
 
     def merge(self, other, callback, level):
-        if type(self) != type(other):
+        if self.real_type != other.real_type:
             print("merge(%s) on different type:%s ->->->- %s\n" %
                   (self.get_item('name'), type(other), type(self)))
 
@@ -222,6 +232,9 @@ class MMInteger(Basic):
         super(MMInteger, self).__init__()
         self._mm_type = "!ruby/object:Api::Type::Integer"
 
+        self._items["default"]["yaml"] = (
+            lambda n, k, v: _indent(n, k, str(v)))
+
     def clone(self):
         return self.__class__()
 
@@ -230,6 +243,9 @@ class MMBoolean(Basic):
     def __init__(self):
         super(MMBoolean, self).__init__()
         self._mm_type = "!ruby/object:Api::Type::Boolean"
+
+        self._items["default"]["yaml"] = (
+            lambda n, k, v: _indent(n, k, str(v).lower()))
 
     def clone(self):
         return self.__class__()
@@ -298,6 +314,10 @@ class MMEnum(Basic):
                 "yaml": lambda n, k, v: _indent(n, k, v),
             }
         })
+
+    @property
+    def real_type(self):
+        return self.get_item("element_type")
 
     def clone(self):
         i = self.__class__()

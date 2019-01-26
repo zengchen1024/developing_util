@@ -29,7 +29,9 @@ def _get_all_path_params(api_info):
     r = {}
     for k, v in api_info.items():
         for p in re.findall(r"{[^/]*}", v["api"]["path"]):
-            r.setdefault(p[1:][:-1], []).append(k)
+            n = p[1:][:-1]
+            if n not in v.get("path_parameter", []):
+                r.setdefault(n, []).append(k)
 
     r.pop("id", None)
     return r
@@ -38,7 +40,7 @@ def _get_all_path_params(api_info):
 def _check_path_params(params, api_info):
     create_params = [i["name"] for i in api_info["create"]["body"]]
 
-    for n, k in params:
+    for n, k in params.items():
         if n not in create_params:
             raise Exception("The path parameters(%s) of api(%s) doesn't exist "
                             "in the create parameters" % (n, ", ".join(k)))

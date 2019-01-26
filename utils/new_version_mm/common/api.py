@@ -27,16 +27,20 @@ def _create_api_info(api, all_models, custom_config):
     msg_prefix, body = _build_parameter(
         all_models.get(p), all_models, custom_config)
 
-    p = custom_config.get("resource_id_path")
-    if not p:
-        raise Exception("Must set resource id path for create api")
-
-    return {
+    r = {
         "msg_prefix": msg_prefix,
         "body": body,
         "crud": "c",
-        "resource_id_path": p
     }
+
+    if "async" not in custom_config:
+        p = custom_config.get("resource_id_path")
+        if not p:
+            raise Exception("Must set resource id path for create api")
+
+        r["resource_id_path"] = p
+
+    return r
 
 
 def _read_api_info(api, all_models, custom_config):
@@ -89,17 +93,27 @@ def _list_api_info(api, all_models, custom_config):
 
 
 def _other_api_info(api, all_models, custom_config):
-    crud = custom_config.get("crud")
+    r = {}
+    crud = ""
+    if "when" in custom_config:
+        r["when"] = custom_config["when"]
+
+        crud = {
+            "after_send_create_request": "c"
+        }[r["when"]]
+    else:
+        crud = custom_config.get("crud")
+
     if not crud:
         raise Exception("Must set crud for none standard "
                         "create/read/update/delete/list api")
+    r["crud"] = crud
 
     if crud.find("r") != -1:
         p = api.get("response", {}).get("datatype", "")
     else:
         p = api.get("request_body", {}).get("datatype", "")
 
-    r = {}
     if p in all_models:
         msg_prefix, body = _build_parameter(
             all_models.get(p), all_models, custom_config)
@@ -107,20 +121,35 @@ def _other_api_info(api, all_models, custom_config):
         r["msg_prefix"] = msg_prefix
         r["body"] = body
 
-    r["crud"] = crud
-    if "action" in custom_config:
-        r["action"] = custom_config["action"]
-
     if custom_config.get("exclude_for_schema"):
         r["exclude_for_schema"] = True
+
+    p = custom_config.get("path_parameter")
+    if p:
+        r["path_parameter"] = p
+
+    p = custom_config.get("default_value")
+    if p:
+        r["default_value"] = p
 
     return r
 
 
-def _remove_project(api):
-    s = re.search(r"{project_id}/|{project}/|{tenant}/", api["path"])
-    if s:
-        api["path"] = api["path"][s.end():]
+def _remove_project(api_info):
+    def _f(path):
+        s = re.search(r"{project_id}/|{project}/|{tenant}/|{tenant_id}/", path)
+        if s:
+            return path[s.end():]
+
+        return path
+
+    api_info["api"]["path"] = _f(api_info["api"]["path"])
+
+    v = api_info["async"]
+    if v:
+        q = v.get("query_status")
+        if q:
+            q["path"] = _f(q["path"])
 
 
 def _replace_resource_id(apis):
@@ -139,7 +168,8 @@ def _replace_resource_id(apis):
         return
 
     for i in apis.values():
-        i["api"]["path"] = re.sub(r"{%s}" % rid, "{id}", i["api"]["path"])
+        if rid not in i.get("path_parameter", []):
+            i["api"]["path"] = re.sub(r"{%s}" % rid, "{id}", i["api"]["path"])
 
 
 def build_resource_api_info(api_yaml, all_models, custom_configs):
@@ -169,8 +199,9 @@ def build_resource_api_info(api_yaml, all_models, custom_configs):
         r["op_id"] = k
         r["api"] = api
         r["verb"] = api["method"].upper()
+        r["async"] = v.get("async")
 
-        _remove_project(api)
+        _remove_project(r)
 
         k1 = t
         if not k1:
