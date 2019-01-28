@@ -28,7 +28,6 @@ overrides: !ruby/object:Provider::ResourceOverrides
   {{/has_example}}
   {{#has_property_override}}
     properties:
-  {{/has_property_override}}
   {{#properties}}
       {{property}}: !ruby/object:Provider::Terraform::PropertyOverride
         {{#to_create}}
@@ -44,6 +43,16 @@ overrides: !ruby/object:Provider::ResourceOverrides
           {{{from_response}}}
         {{/from_response}}
   {{/properties}}
+  {{/has_property_override}}
+  {{#has_async_override}}
+    api_asyncs:
+  {{#api_asyncs}}
+      {{api}}: !ruby/object:Provider::AsyncOverride
+        {{#custom_status_check_func}}
+        custom_status_check_func: "{{{custom_status_check_func}}}"
+        {{/custom_status_check_func}}
+  {{/api_asyncs}}
+  {{/has_async_override}}
 {{/resources}}
 # This is where custom code would be defined eventually.
 examples: !ruby/object:Api::Resource::HashArray

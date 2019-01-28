@@ -5,7 +5,6 @@ from common.utils import write_file
 
 
 def build_terraform_yaml(info, output):
-    override_properties = set(["to_create", "to_update", "from_response"])
     data = []
     for rn, v in info.items():
         r = {}
@@ -17,20 +16,11 @@ def build_terraform_yaml(info, output):
 
         overrides = config.get("overrides")
         if overrides:
-            pros = []
-            for p, v1 in overrides.items():
-                e = set(v1.keys()) - override_properties
-                if e:
-                    raise Exception("find unspported override properties(%s) "
-                                    "for resource(%s)" % (" ".join(e), rn))
+            _generate_property_override(overrides, rn, r)
 
-                v2 = {"property": p}
-                v2.update(v1)
-
-                pros.append(v2)
-
-            r["properties"] = pros
-            r["has_property_override"] = True
+        overrides = config.get("api_asyncs")
+        if overrides:
+            _generate_async_override(overrides, v["api_info"], r)
 
         if r:
             r["name"] = rn
@@ -42,8 +32,45 @@ def build_terraform_yaml(info, output):
     write_file(output + "terraform.yaml", [s])
 
 
+def _generate_property_override(overrides, resource_name, result):
+    override_properties = set(["to_create", "to_update", "from_response"])
+
+    pros = []
+    for p, v1 in overrides.items():
+        e = set(v1.keys()) - override_properties
+        if e:
+            raise Exception("find unspported override properties(%s) "
+                            "for resource(%s)" % (" ".join(e), resource_name))
+
+        v2 = {"property": p}
+        v2.update(v1)
+
+        pros.append(v2)
+
+    result["properties"] = pros
+    result["has_property_override"] = True
+
+
+def _generate_async_override(api_asyncs, api_info, result):
+    def _api_key(p):
+        for v in api_info.values():
+            if v["op_id"] == p:
+                return v.get("type") if v.get("type") else p
+
+    if api_asyncs:
+        pros = []
+        for p, v1 in api_asyncs.items():
+            v2 = {"api": _api_key(p)}
+            v2.update(v1)
+
+            pros.append(v2)
+
+        result["api_asyncs"] = pros
+        result["has_async_override"] = True
+
+
 def _generate_example_config(examples, info):
-    trn = info["terraform_resource_name"]
+    trn = info["resource_name"]
     m = re.compile(r"resource \"%s\" \"(.*)\" {" % trn)
 
     def _find_id(f):

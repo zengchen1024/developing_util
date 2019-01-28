@@ -217,7 +217,7 @@ class ApiList(ApiBase):
 def build_resource_api_config(api_info, all_models, properties, custom_config):
     r = ["    apis:\n"]
 
-    for k, v in api_info.items():
+    for v in api_info.values():
         t = v.get("type")
 
         obj = None

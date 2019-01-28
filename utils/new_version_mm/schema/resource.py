@@ -49,20 +49,8 @@ class _Resource(object):
         return r
 
 
-def get_resource_name(tag_info, custom_configs):
-    rn = tag_info["name"]
-    if custom_configs:
-        rn = custom_configs.get("resource_name", rn)
-
-    if isinstance(rn, unicode):
-        raise Exception("Must config resource_name in English, "
-                        "because the tag is Chinese")
-
-    return rn[0].upper() + rn[1:]
-
-
-def build_resource_config(api_info, properties, tag_info,
-                          custom_configs, service_type):
+def build_resource_config(api_info, properties, resource_name,
+                          resource_desc, service_type):
     params = {}
     pros = {}
     for k, v in properties.items():
@@ -71,9 +59,7 @@ def build_resource_config(api_info, properties, tag_info,
         else:
             params[k] = v
 
-    resource = _Resource(
-        get_resource_name(tag_info, custom_configs),
-        service_type, tag_info.get("description", ""),
-        params, pros)
+    resource = _Resource(resource_name, service_type, resource_desc,
+                         params, pros)
 
     return resource.render()
