@@ -18,6 +18,11 @@
             {{/path_parameter}}
           {{/has_path_parameter}}
         {{/action}}
+        {{#other}}
+          {{#crud}}
+        crud: "{{crud}}"
+          {{/crud}}
+        {{/other}}
         {{#async}}
         async: !ruby/object:Api::Async
           {{#query_status}}

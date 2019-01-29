@@ -157,7 +157,7 @@ class ApiCreate(ApiBase):
 
 class ApiAction(ApiBase):
     def __init__(self):
-        super(ApiAction, self).__init__("action")
+        super(ApiAction, self).__init__("")
 
         self._when = ""
         self._path_parameter = None
@@ -182,6 +182,26 @@ class ApiAction(ApiBase):
         self._name = api_info["op_id"]
         self._when = api_info.get("when")
         self._path_parameter = api_info.get("path_parameter")
+
+
+class ApiOther(ApiBase):
+    def __init__(self):
+        super(ApiOther, self).__init__("")
+
+        self._crud = ""
+
+    def _render_data(self):
+        v = super(ApiOther, self)._render_data()
+        v["api_type"] = "ApiOther"
+
+        v["other"] = {"crud": self._crud}
+        return v
+
+    def init(self, api_info, all_models, properties):
+        super(ApiOther, self).init(api_info, all_models, properties)
+
+        self._name = api_info["op_id"]
+        self._crud = api_info.get("crud")
 
 
 class ApiList(ApiBase):
@@ -225,7 +245,7 @@ def build_resource_api_config(api_info, all_models, properties, custom_config):
             if v.get("when"):
                 obj = ApiAction()
             else:
-                continue
+                obj = ApiOther()
         elif t == "create":
             obj = ApiCreate()
         elif t == "list":
