@@ -1,0 +1,34 @@
+{{#structs}}
+  {{name}}:
+    type: object
+    {{#has_required}}
+    required:
+    {{#required}}
+      - {{item}}
+    {{/required}}
+    {{/has_required}}
+    properties:
+    {{#properties}}
+      {{name}}:
+        description: {{description}}
+        {{#type}}
+        type: {{type}}
+        {{/type}}
+        {{#format}}
+        format: {{format}}
+        {{/format}}
+        {{#$ref}}
+        $ref: {{$ref}}
+        {{/$ref}}
+        {{#items}}
+        items:
+          {{#items.type}}
+          type: {{items.type}}
+          {{/items.type}}
+          {{#items.$ref}}
+          $ref: {{items.$ref}}
+          {{/items.$ref}}
+        {{/items}}
+    {{/properties}}
+
+{{/structs}}
