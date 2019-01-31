@@ -37,7 +37,7 @@ class ApiBase(object):
         crud = api_info["crud"]
         if crud.find("c") != -1 or crud.find("u") != -1:
             self._parameters = mm_param.build(
-                api_info.get("body", []), all_models)
+                api_info.get("original_body", []), all_models)
 
         if self._parameters:
             if not api_info.get("exclude_for_schema"):
@@ -94,13 +94,10 @@ class ApiBase(object):
         return r
 
     def child(self, key):
-        if self._msg_prefix == key:
-            return self
-
         if key in self._parameters:
             return self._parameters[key]
 
-        raise Exception("no child with key(%s)" % key)
+        raise Exception("parent:root, no child with key(%s)" % key)
 
     def _find_param(self, path):
         obj = self

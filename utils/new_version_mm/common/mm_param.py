@@ -419,7 +419,8 @@ class MMNestedObject(Basic):
         if isinstance(p, dict) and key in p:
             return p[key]
 
-        raise Exception("no child with key(%s)" % key)
+        raise Exception(
+            "parent:%s, no child with key(%s)" % (self.get_item("name"), key))
 
     def childs(self):
         p = self.get_item("properties")
@@ -564,7 +565,8 @@ class MMArray(Basic):
         if isinstance(item_type, dict) and key in item_type:
             return item_type[key]
 
-        raise Exception("no child with key(%s)" % key)
+        raise Exception(
+            "parent:%s, no child with key(%s)" % (self.get_item("name"), key))
 
     def childs(self):
         item_type = self.get_item("item_type")

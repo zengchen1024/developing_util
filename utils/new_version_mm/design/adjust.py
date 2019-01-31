@@ -12,7 +12,7 @@ class _Tree(object):
         if key in self._p:
             return self._p[key]
 
-        raise Exception("no child with key(%s)" % key)
+        raise Exception("parent:root, no child with key(%s)" % key)
 
     def add_child(self, child):
         self._p[child.get_item("name")] = child

@@ -31,6 +31,7 @@ def _create_api_info(api, all_models, custom_config):
         "msg_prefix": msg_prefix,
         "body": body,
         "crud": "c",
+        "original_body": all_models.get(p)
     }
 
     if "async" not in custom_config:
@@ -55,7 +56,8 @@ def _read_api_info(api, all_models, custom_config):
     return {
         "msg_prefix": msg_prefix,
         "body": body,
-        "crud": "r"
+        "crud": "r",
+        "original_body": all_models.get(p)
     }
 
 
@@ -77,7 +79,8 @@ def _update_api_info(api, all_models, custom_config):
     return {
         "msg_prefix": msg_prefix,
         "body": body,
-        "crud": "u"
+        "crud": "u",
+        "original_body": all_models.get(p)
     }
 
 
@@ -120,6 +123,7 @@ def _other_api_info(api, all_models, custom_config):
 
         r["msg_prefix"] = msg_prefix
         r["body"] = body
+        r["original_body"] = all_models.get(p)
 
     if custom_config.get("exclude_for_schema"):
         r["exclude_for_schema"] = True
