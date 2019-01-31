@@ -10,7 +10,8 @@
     properties:
     {{#properties}}
       {{name}}:
-        description: {{description}}
+        description: |
+{{description}}
         {{#type}}
         type: {{type}}
         {{/type}}
@@ -18,7 +19,7 @@
         format: {{format}}
         {{/format}}
         {{#$ref}}
-        $ref: {{$ref}}
+        $ref: "{{$ref}}"
         {{/$ref}}
         {{#items}}
         items:
@@ -26,7 +27,7 @@
           type: {{items.type}}
           {{/items.type}}
           {{#items.$ref}}
-          $ref: {{items.$ref}}
+          $ref: "{{items.$ref}}"
           {{/items.$ref}}
         {{/items}}
     {{/properties}}

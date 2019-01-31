@@ -25,7 +25,7 @@ class Struct(object):
 
             d = {
                 "name": p.name,
-                "description": p.desc
+                "description": _desc_yaml(8, "description", p.desc)
             }
             d.update(_parse_datatype(p.datatype))
 
@@ -141,13 +141,44 @@ def _parse_datatype(datatype):
             }
         }
 
-    m = re.match(r"^object:|^jsonobject:", dt)
+    m = re.match(r"^object:|^jsonobject:|^dict:", dt)
     if m:
         return {
             "$ref": "#/definitions/%s" % datatype[m.end():]
         }
 
     raise Exception("Unknown parameter type: %s" % datatype)
+
+
+def _desc_yaml(indent, k, v):
+
+    def _paragraph_yaml(p, indent, max_len):
+        r = []
+        s1 = p
+        while len(s1) > max_len:
+            # +1, because maybe the s1[max_len] == ' '
+            i = s1.rfind(" ", 0, max_len + 1)
+            s2, s1 = (s1[:max_len], s1[max_len:]) if i == -1 else (
+                s1[:i], s1[(i + 1):])
+            r.append("%s%s\n" % (' ' * indent, s2))
+        if s1:
+            r.append("%s%s\n" % (' ' * indent, s1))
+
+        return "".join(r)
+
+    result = []
+    indent += 2
+    max_len = 79 - indent
+    if max_len < 20:
+        max_len = 20
+
+    for p in v.split("\n"):
+        if not p:
+            continue
+        result.append(_paragraph_yaml(p, indent, max_len))
+
+    result[-1] = result[-1][:-1]
+    return "".join(result)
 
 
 def run(file_name, output):
