@@ -27,6 +27,21 @@ class _Tree(object):
 
         return obj
 
+    def set_property(self, argv):
+        ex_msg = "Execute cmd(set %s) failed, " % argv
+
+        v = argv.split(" ")
+        if len(v) < 3:
+            raise Exception("%smust input node, property and its new"
+                            " value" % ex_msg)
+
+        c = "description"
+        if v[1] == c:
+            v[2] = argv[argv.find(c) + len(c) + 1:]
+
+        p = self.find_param(v[0])
+        p.set_item(v[1], v[2])
+
     def rename(self, argv):
         ex_msg = "Execute cmd(rename %s) failed, " % argv
 
@@ -117,7 +132,8 @@ def adjust(adjust_cmds, properties):
         'rename': rn.rename,
         'delete': rn.delete,
         'merge': rn.merge,
-        'move': rn.move
+        'move': rn.move,
+        'set': rn.set_property
     }
 
     for cmds in adjust_cmds:

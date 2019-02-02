@@ -29,6 +29,7 @@ class Basic(object):
             "description": {
                 "value": None,
                 "yaml": self._desc_yaml,
+                "param_yaml": self._desc_yaml
             },
 
             "exclude": {
