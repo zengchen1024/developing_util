@@ -29,21 +29,19 @@ overrides: !ruby/object:Provider::ResourceOverrides
   {{#has_property_override}}
     properties:
   {{#properties}}
-      {{property}}: !ruby/object:Provider::Terraform::PropertyOverride
-        {{#to_create}}
-        to_create: |
-          {{{to_create}}}
-        {{/to_create}}
-        {{#to_update}}
-        to_update: |
-          {{{to_update}}}
-        {{/to_update}}
-        {{#from_response}}
-        from_response: |
-          {{{from_response}}}
-        {{/from_response}}
+      {{prop_path}}: !ruby/object:Provider::Terraform::PropertyOverride
+        {{var_name}}: |
+{{{var_value}}}
   {{/properties}}
   {{/has_property_override}}
+  {{#has_parameter_override}}
+    api_parameters:
+  {{#parameters}}
+      {{prop_path}}: !ruby/object:Provider::Terraform::PropertyOverride
+        {{var_name}}: |
+{{{var_value}}}
+  {{/parameters}}
+  {{/has_parameter_override}}
   {{#has_async_override}}
     api_asyncs:
   {{#api_asyncs}}

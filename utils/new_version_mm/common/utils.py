@@ -42,3 +42,15 @@ def remove_none(dict_v):
     for k in dict_v.keys():
         if not dict_v[k]:
             dict_v.pop(k)
+
+
+def find_property(properties, path):
+    items = path.split(".")
+    obj = properties.get(items[0].strip())
+    if not obj:
+        raise Exception("parent:root, no child with key(%s)" % items[0])
+
+    for k in items[1:]:
+        obj = obj.child(k.strip())
+
+    return obj

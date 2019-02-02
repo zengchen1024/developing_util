@@ -83,7 +83,8 @@ def _generate_yaml(api_path, product_info, tag_info, output):
             override["ansible"]["data"][resource_name] = d
 
         d = _generate_terraform_config(api_path, product_info, api_info,
-                                       custom_configs, resource_name)
+                                       properties, custom_configs,
+                                       resource_name)
         if d:
             override["terraform"]["data"][resource_name] = d
 
@@ -102,7 +103,7 @@ def _generate_ansible_config(custom_configs):
         }
 
 
-def _generate_terraform_config(api_path, product_info, api_info,
+def _generate_terraform_config(api_path, product_info, api_info, properties,
                                custom_configs, resource_name):
 
     v = custom_configs.get("terraform")
@@ -114,6 +115,7 @@ def _generate_terraform_config(api_path, product_info, api_info,
             "config": v,
             "config_dir": api_path,
             "api_info": api_info,
+            "properties": properties,
             "resource_name": "%s_%s" % (prefix, resource_name.lower())
         }
 
