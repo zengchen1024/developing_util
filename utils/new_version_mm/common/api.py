@@ -132,10 +132,6 @@ def _other_api_info(api, all_models, custom_config):
     if p:
         r["path_parameter"] = p
 
-    p = custom_config.get("default_value")
-    if p:
-        r["default_value"] = p
-
     return r
 
 
@@ -204,6 +200,7 @@ def build_resource_api_info(api_yaml, all_models, custom_configs):
         r["api"] = api
         r["verb"] = api["method"].upper()
         r["async"] = v.get("async")
+        r["default_value"] = v.get("default_value")
 
         _remove_project(r)
 

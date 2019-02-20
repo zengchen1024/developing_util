@@ -30,6 +30,8 @@ def _get_all_path_params(api_info):
     for k, v in api_info.items():
         for p in re.findall(r"{[^/]*}", v["api"]["path"]):
             n = p[1:][:-1]
+            # path_parameter is set in the custom config file for each api
+            # especially for action api
             if n not in v.get("path_parameter", []):
                 r.setdefault(n, []).append(k)
 

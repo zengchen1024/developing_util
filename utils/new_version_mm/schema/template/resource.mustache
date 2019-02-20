@@ -31,6 +31,9 @@
     {{#description}}
     description: {{{description}}}
     {{/description}}
+    {{#version}}
+    version: "{{version}}"
+    {{/version}}
     {{#list_info}}
     list_op: !ruby/object:Api::ListOp
       path: {{path}}
