@@ -91,7 +91,12 @@ def _set_property(api_info, properties):
 
         if leaf:
             for v in n.path:
-                m[info[v]] = 1
+                m[info[v]] += 1
+
+            if m["r"] > 1:
+                raise Exception("there are more than one read api have the "
+                                "same parameter(%s), please delete them to "
+                                "leave only one" % n.get_item("name"))
 
         else:
             for i in n.childs():
