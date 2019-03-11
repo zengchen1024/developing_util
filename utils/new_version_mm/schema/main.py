@@ -69,13 +69,12 @@ def _generate_yaml(api_path, product_info, tag_info, output):
 
         r.extend(
             build_resource_config(
-                api_info, properties, resource_name,
-                v.get("description", ""), service_type)
+                api_info, properties, resource_name,v.get("description", ""))
         )
 
         r.extend(
-            build_resource_api_config(api_info, all_models,
-                                      properties, custom_configs)
+            build_resource_api_config(api_info, all_models, properties,
+                                      custom_configs, service_type)
         )
 
         d = _generate_ansible_config(custom_configs)

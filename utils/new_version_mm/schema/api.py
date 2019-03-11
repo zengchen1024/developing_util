@@ -13,6 +13,7 @@ class ApiBase(object):
         self._msg_prefix = ""
         self._parameters = None
         self._async = None
+        self.service_type = ""
 
     def render(self):
         v = self._render_data()
@@ -70,7 +71,8 @@ class ApiBase(object):
             "name":      self._name,
             "path":      self._path,
             "verb":      self._verb,
-            "async":     self._async
+            "async":     self._async,
+            "service_type": self.service_type
         }
 
     def _generate_parameter_config(self):
@@ -231,7 +233,8 @@ class ApiList(ApiBase):
         self._msg_prefix = api_info.get("msg_prefix")
 
 
-def build_resource_api_config(api_info, all_models, properties, custom_config):
+def build_resource_api_config(api_info, all_models, properties,
+                              custom_config, service_type):
     r = ["    apis:\n"]
 
     for v in api_info.values():
@@ -251,6 +254,7 @@ def build_resource_api_config(api_info, all_models, properties, custom_config):
             obj = ApiBase(t)
 
         obj.init(v, all_models, properties)
+        obj.service_type = service_type
         r.extend(obj.render())
 
     return r

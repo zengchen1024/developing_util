@@ -5,9 +5,8 @@ from common.utils import remove_none
 
 
 class _Resource(object):
-    def __init__(self, name, service_type, desc, parameter, properties):
+    def __init__(self, name, desc, parameter, properties):
         self._name = name
-        self._service_type = service_type
         self._description = desc
         self.version = ""
         self._parameters = parameter
@@ -16,7 +15,6 @@ class _Resource(object):
     def render(self):
         v = {
             "name": self._name,
-            "service_type": self._service_type,
             "description": self._description,
             "version": self.version,
         }
@@ -51,8 +49,7 @@ class _Resource(object):
         return r
 
 
-def build_resource_config(api_info, properties, resource_name,
-                          resource_desc, service_type):
+def build_resource_config(api_info, properties, resource_name, resource_desc):
     params = {}
     pros = {}
     for k, v in properties.items():
@@ -61,8 +58,7 @@ def build_resource_config(api_info, properties, resource_name,
         else:
             params[k] = v
 
-    resource = _Resource(resource_name, service_type, resource_desc,
-                         params, pros)
+    resource = _Resource(resource_name, resource_desc, params, pros)
 
     version = api_info["create"]["api"].get("version")
     if version:
