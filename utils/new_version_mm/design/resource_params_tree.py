@@ -85,6 +85,10 @@ def _set_output(properties):
 
 def _set_property(api_info, properties):
     info = {v["op_id"]: v["crud"] for v in api_info.values()}
+    read_apis = {
+        v["op_id"]: v["op_id"] if v.get("type") is None else v["type"]
+        for v in api_info.values() if v["crud"].find("r") != -1
+    }
 
     def _set_crud(n, leaf):
         m = {"c": 0, "r": 0, "u": 0, "d": 0}
@@ -95,8 +99,9 @@ def _set_property(api_info, properties):
 
             if m["r"] > 1:
                 raise Exception("there are more than one read api have the "
-                                "same parameter(%s), please delete them to "
-                                "leave only one" % n.get_item("name"))
+                                "same parameter for property(%s), please "
+                                "delete them to leave only "
+                                "one" % n.get_item("name"))
 
         else:
             for i in n.childs():
@@ -109,7 +114,7 @@ def _set_property(api_info, properties):
         if n.get_item("crud").find("r") != -1:
             for k, v in n.path.items():
                 if info[k] == "r":
-                    n.set_item("field", v)
+                    n.set_item("field", read_apis[k] + "." + v)
 
     def callbacks(n, leaf):
         _set_crud(n, leaf)

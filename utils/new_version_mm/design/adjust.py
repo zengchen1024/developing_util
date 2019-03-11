@@ -117,7 +117,7 @@ def _merge_to(node2, node1, level):
     op1 = set(node1.path.keys())
     op2 = set(node2.path.keys())
     if op1.intersection(op2):
-        raise Exception("can merge the parameter of same "
+        raise Exception("can not merge the parameter of same "
                         "api(%s)" % " ".join(op1.intersection(op2)))
 
     node1.path.update(node2.path)
