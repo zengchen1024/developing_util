@@ -110,20 +110,32 @@ class ApiBase(object):
 
     def _build_field(self, properties):
 
-        def _set_field(o):
-            target = o.path.get(self._op_id)
-            if not target:
-                return
-
+        def _build_index(o):
             path = []
             while o is not None:
                 path.append(o.get_item("name"))
                 o = o.parent
             path.reverse()
+            return ".".join(path)
 
-            self._find_param(target).set_item("field", ".".join(path))
+        r = {}
+
+        def _build_map(o):
+            target = o.path.get(self._op_id)
+            if not target:
+                return
+
+            r[target] = _build_index(o)
 
         for o in properties.values():
+            o.parent = None
+
+            o.traverse(_build_map)
+
+        def _set_field(o):
+            o.set_item("field", r.get(_build_index(o)))
+
+        for o in self._parameters.values():
             o.parent = None
 
             o.traverse(_set_field)
