@@ -1,4 +1,7 @@
+import functools
 import re
+
+from common import mm_param
 
 
 class _Tree(object):
@@ -109,6 +112,36 @@ class _Tree(object):
         raise Exception("the name(%s) is exist in parameter(%s)" % (
                             node_name, n))
 
+    def add_path_param(self, create_api_id, argv):
+        ex_msg = "Execute cmd(add_path_param %s) failed, " % argv
+
+        v = argv.split(" ")
+        if len(v) < 3:
+            raise Exception("%smust input path parameter name, type[str, "
+                            "bool, int] and description" % ex_msg)
+
+        parent = self
+        try:
+            self._raise_if_duplicate_name(parent, v[1])
+        except Exception as ex:
+            raise Exception("%s%s" % (ex_msg, ex))
+
+        dt = v[1]
+        if dt not in ["str", "bool", "int"]:
+            raise Exception("%snot support type(%s)" % (ex_msg, dt))
+
+        name = v[0]
+        p = {
+            "name": name,
+            "datatype": dt,
+            "description": argv[argv.find(dt) + len(dt) + 1:],
+            "mandatory": True
+        }
+        p = mm_param.build([p], None, parent)[name]
+        p.path[create_api_id] = name
+
+        parent.add_child(p)
+
 
 def _merge_to(node2, node1, level):
     if not (node1 and node2):
@@ -126,14 +159,15 @@ def _merge_to(node2, node1, level):
         node1.set_item("required", True)
 
 
-def adjust(adjust_cmds, properties):
+def adjust(adjust_cmds, properties, create_api_id):
     rn = _Tree(properties)
     fm = {
         'rename': rn.rename,
         'delete': rn.delete,
         'merge': rn.merge,
         'move': rn.move,
-        'set': rn.set_property
+        'set': rn.set_property,
+        'add_path_param': functools.partial(rn.add_path_param, create_api_id)
     }
 
     for cmds in adjust_cmds:

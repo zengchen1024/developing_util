@@ -2,6 +2,7 @@ import re
 
 from adjust import adjust
 from common.api import build_resource_api_info
+from common import mm_param
 from common.parameter import build_resource_params
 
 
@@ -10,17 +11,15 @@ def generate_resource_properties(api_yaml, all_models, tag, custom_configs):
     api_info = build_resource_api_info(api_yaml, all_models,
                                        custom_configs.get("apis", {}))
 
-    path_params = _get_all_path_params(api_info)
-    _check_path_params(path_params, api_info)
-
     properties = build_resource_params(api_info, all_models)
 
-    adjust(custom_configs.get("adjust", []), properties)
+    adjust(custom_configs.get("adjust", []), properties,
+           api_info["create"]["op_id"])
 
     _set_property(api_info, properties)
     _set_output(properties)
 
-    _rename_path_params(api_info, path_params, properties)
+    _change_path_parameter(api_info, properties)
 
     return api_info, properties
 
@@ -30,45 +29,81 @@ def _get_all_path_params(api_info):
     for k, v in api_info.items():
         for p in re.findall(r"{[^/]*}", v["api"]["path"]):
             n = p[1:][:-1]
+
             # path_parameter is set in the custom config file for each api
             # especially for action api
             if n not in v.get("path_parameter", []):
                 r.setdefault(n, []).append(k)
 
-    r.pop("id", None)
     return r
 
 
-def _check_path_params(params, api_info):
-    create_params = [i["name"] for i in api_info["create"]["body"]]
-
-    for n, k in params.items():
-        if n not in create_params:
-            raise Exception("The path parameters(%s) of api(%s) doesn't exist "
-                            "in the create parameters" % (n, ", ".join(k)))
-
-
-def _rename_path_params(api_info, params, properties):
+def _new_name_of_path_param(api_info, params, properties):
     create_op_id = api_info["create"]["op_id"]
-
-    for n, ks in params.items():
+    r = {}
+    for n in params:
+        v = []
         for item in properties.values():
+            if not isinstance(item, (mm_param.MMString, mm_param.MMBoolean,
+                                     mm_param.MMInteger)):
+                continue
+
             path = item.path.get(create_op_id)
             if path is None:
                 continue
 
             if n == path.split(".")[-1]:
-                if n != item.get_item("name"):
-                    for k in ks:
-                        api_info[k]["api"]["path"] = re.sub(
-                            r"{%s}" % n, "{%s}" % item.get_item("name"),
-                            api_info[k]["api"]["path"]
-                        )
-                break
+                v.append(item.get_item("name"))
 
-        else:
-            raise Exception("Can't find the path paarameter(%s) of"
-                            " api(%s)" % (n, ", ".join(k)))
+        if len(v) == 0:
+            raise Exception("Can't find the path parameter(%s) of api(%s), "
+                            "maybe you need add it manually with command of "
+                            "'add_path_param'" % (n, ", ".join(params[n])))
+        elif len(v) != 1:
+            raise Exception("find more than one properties(%s) which are "
+                            "corresponding to path parameter(%s) of api(%s)"
+                            "" % (", ".join(v), n, ", ".join(params[n])))
+        r[n] = v[0]
+
+    return r
+
+
+def _path_parameter_resource_id(apis):
+    rid = []
+    for i in ["read", "delete", "update"]:
+        api = apis.get(i)
+        if not api:
+            continue
+
+        path = api["api"]["path"]
+        s = re.search(r"{[A-Za-z0-9_]+}$", path)
+        if s:
+            rid.append(path[s.start() + 1: s.end() - 1])
+
+    if len(rid) > 2 and len(set(rid)) == 1:
+        return rid.pop()
+
+
+def _change_path_parameter(api_info, properties):
+    old_params = _get_all_path_params(api_info)
+
+    p = _path_parameter_resource_id(api_info)
+
+    # if p exists, and not remove it, then it will except in
+    # _new_name_of_path_param
+    v = old_params.pop(p, None)
+
+    new_params = _new_name_of_path_param(api_info, old_params, properties)
+
+    if p:
+        old_params[p] = v
+        new_params[p] = "id"
+
+    for o, n in new_params.items():
+        if o != n:
+            for i in old_params[o]:
+                api_info[i]["api"]["path"] = re.sub(
+                    r"{%s}" % o, "{%s}" % n, api_info[i]["api"]["path"])
 
 
 def _set_output(properties):

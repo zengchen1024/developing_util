@@ -152,26 +152,6 @@ def _remove_project(api_info):
             q["path"] = _f(q["path"])
 
 
-def _replace_resource_id(apis):
-    rid = ""
-    for i in ["read", "delete", "update"]:
-        api = apis.get(i)
-        if not api:
-            continue
-
-        path = api["api"]["path"]
-        s = re.search(r"{[A-Za-z0-9_]+}$", path)
-        if s:
-            rid = path[s.start() + 1: s.end() - 1]
-            break
-    else:
-        return
-
-    for i in apis.values():
-        if rid not in i.get("path_parameter", []):
-            i["api"]["path"] = re.sub(r"{%s}" % rid, "{id}", i["api"]["path"])
-
-
 def build_resource_api_info(api_yaml, all_models, custom_configs):
     m = {
         "create": _create_api_info,
@@ -209,5 +189,4 @@ def build_resource_api_info(api_yaml, all_models, custom_configs):
             k1 = k
         result[k1] = r
 
-    _replace_resource_id(result)
     return result
