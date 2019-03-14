@@ -234,7 +234,7 @@ class ApiList(ApiBase):
 
 
 def build_resource_api_config(api_info, all_models, properties,
-                              custom_config, service_type):
+                              service_type, **kwargs):
     r = ["    apis:\n"]
 
     for v in api_info.values():

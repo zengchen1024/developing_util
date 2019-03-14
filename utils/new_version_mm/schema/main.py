@@ -43,15 +43,8 @@ def run(api_path, cloud_name, tags, output):
 
 def _generate_yaml(api_path, product_info, tag_info, output):
     r = [_render_product(product_info)]
-    override = {
-        "ansible": {
-            "f": build_ansible_yaml,
-            "data": {}
-        },
-        "terraform": {
-            "f": build_terraform_yaml,
-            "data": {}
-        }}
+
+    platform_config = []
 
     api_yaml = read_yaml(api_path + "api.yaml")
     all_models = read_yaml(api_path + "models.yaml")
@@ -64,59 +57,50 @@ def _generate_yaml(api_path, product_info, tag_info, output):
             api_yaml, all_models, tag, custom_configs
         )
 
-        resource_name = _get_resource_name(v, custom_configs)
-        service_type = product_info["service_type"]
+        argv = {
+            "config_dir": api_path,
+            "api_info": api_info,
+            "all_models": all_models,
+            "properties": properties,
+            "service_type": product_info["service_type"],
+            "resource_name": _get_resource_name(v, custom_configs),
+            "version": _get_version(api_info),
+            "resource_desc": v.get("description", ""),
+            "custom_configs": custom_configs,
+            "cloud_full_name": product_info["cloud_full_name"],
+        }
 
-        r.extend(
-            build_resource_config(
-                api_info, properties, resource_name,v.get("description", ""))
-        )
+        r.extend(build_resource_config(**argv))
 
-        r.extend(
-            build_resource_api_config(api_info, all_models, properties,
-                                      custom_configs, service_type)
-        )
+        r.extend(build_resource_api_config(**argv))
 
-        d = _generate_ansible_config(custom_configs)
-        if d:
-            override["ansible"]["data"][resource_name] = d
-
-        d = _generate_terraform_config(api_path, product_info, api_info,
-                                       properties, custom_configs,
-                                       resource_name)
-        if d:
-            override["terraform"]["data"][resource_name] = d
+        platform_config.append(argv)
 
     write_file(output + "api.yaml", r)
 
-    for item in override.values():
-        if item["data"]:
-            item["f"](item["data"], output)
+    _generate_platform_yaml(platform_config, output)
 
 
-def _generate_ansible_config(custom_configs):
-    v = custom_configs.get("ansible")
-    if v:
-        return {
-            "config": v,
+def _generate_platform_yaml(info, output):
+    r = {
+        "ansible": {
+            "f": build_ansible_yaml,
+            "data": []
+        },
+        "terraform": {
+            "f": build_terraform_yaml,
+            "data": []
         }
+    }
 
+    for v in info:
+        for k in r:
+            if v["custom_configs"].get(k):
+                r[k]["data"].append(v)
 
-def _generate_terraform_config(api_path, product_info, api_info, properties,
-                               custom_configs, resource_name):
-
-    v = custom_configs.get("terraform")
-    if v:
-        prefix = "%s_%s" % (product_info["cloud_full_name"],
-                            product_info["service_type"])
-
-        return {
-            "config": v,
-            "config_dir": api_path,
-            "api_info": api_info,
-            "properties": properties,
-            "resource_name": "%s_%s" % (prefix, resource_name.lower())
-        }
+    for k, v in r.items():
+        if v["data"]:
+            v["f"](v["data"], output)
 
 
 def _get_cloud_info(cloud_name):
@@ -147,6 +131,15 @@ def _get_resource_name(tag_info, custom_configs):
                         "because the tag is Chinese")
 
     return rn[0].upper() + rn[1:]
+
+
+def _get_version(api_info):
+    version = api_info["create"]["api"].get("version")
+    if version:
+        v = [i.strip().lower() for i in version.split(",")]
+        v.sort()
+        return v[-1]
+    return None
 
 
 if __name__ == "__main__":

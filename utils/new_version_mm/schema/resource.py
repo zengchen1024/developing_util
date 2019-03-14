@@ -49,7 +49,8 @@ class _Resource(object):
         return r
 
 
-def build_resource_config(api_info, properties, resource_name, resource_desc):
+def build_resource_config(api_info, properties, resource_name,
+                          resource_desc, version, **kwargs):
     params = {}
     pros = {}
     for k, v in properties.items():
@@ -60,9 +61,5 @@ def build_resource_config(api_info, properties, resource_name, resource_desc):
 
     resource = _Resource(resource_name, resource_desc, params, pros)
 
-    version = api_info["create"]["api"].get("version")
-    if version:
-        v = [i.strip().lower() for i in version.split(",")]
-        v.sort()
-        resource.version = v[-1]
+    resource.version = version
     return resource.render()

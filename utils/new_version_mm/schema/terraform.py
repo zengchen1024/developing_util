@@ -6,9 +6,9 @@ from common.utils import write_file, find_property
 
 def build_terraform_yaml(info, output):
     data = []
-    for rn, v in info.items():
+    for v in info:
         r = {}
-        config = v.get("config")
+        config = v.get("custom_configs")["terraform"]
 
         examples = config.get("examples")
         if examples:
@@ -16,15 +16,16 @@ def build_terraform_yaml(info, output):
 
         overrides = config.get("properties")
         if overrides:
-            _generate_property_override(overrides, v["api_info"],
-                                        v["properties"], rn, r)
+            _generate_property_override(
+                overrides, v["api_info"], v["properties"],
+                v["resource_name"], r)
 
         overrides = config.get("api_asyncs")
         if overrides:
             _generate_async_override(overrides, v["api_info"], r)
 
         if r:
-            r["name"] = rn
+            r["name"] = v["resource_name"]
             data.append(r)
 
     s = pystache.Renderer().render_path("template/terraform.mustache",
@@ -105,7 +106,10 @@ def _generate_async_override(api_asyncs, api_info, result):
 
 
 def _generate_example_config(examples, info):
-    trn = info["resource_name"]
+    trn = ("%s_%s_%s_%s" % (
+        info["cloud_full_name"], info["service_type"],
+        info["resource_name"], info["version"])).lower()
+
     m = re.compile(r"resource \"%s\" \"(.*)\" {" % trn)
 
     def _find_id(f):
