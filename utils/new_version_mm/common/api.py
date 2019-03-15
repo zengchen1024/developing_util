@@ -8,14 +8,22 @@ def _build_parameter(body, all_models, custom_config):
     if cmds:
         preprocess(body, all_models, cmds)
 
+    original_body = body
+
     msg_prefix = None
     if len(body) == 1:
         p = body[0]
+        # p["datatype"] in all_models means p["datatype"] is a struct
+        # here, it only parses msg_prefix for struct like {msg_prefix: {}}
         if p and p["datatype"] in all_models:
             msg_prefix = p["name"]
             body = all_models[p["datatype"]]
 
-    return msg_prefix, body
+    return {
+        "msg_prefix": msg_prefix,
+        "body": body,
+        "original_body": original_body
+    }
 
 
 def _create_api_info(api, all_models, custom_config):
@@ -24,15 +32,9 @@ def _create_api_info(api, all_models, custom_config):
         raise Exception("It can not build create parameter, "
                         "the datatype(%s) is not a struct" % p)
 
-    msg_prefix, body = _build_parameter(
-        all_models.get(p), all_models, custom_config)
+    r = _build_parameter(all_models.get(p), all_models, custom_config)
 
-    r = {
-        "msg_prefix": msg_prefix,
-        "body": body,
-        "crud": "c",
-        "original_body": all_models.get(p)
-    }
+    r["crud"] = "c"
 
     if "async" not in custom_config:
         p = custom_config.get("resource_id_path")
@@ -50,21 +52,23 @@ def _read_api_info(api, all_models, custom_config):
         raise Exception("It can not build get parameter, "
                         "the datatype(%s) is not a struct" % p)
 
-    msg_prefix, body = _build_parameter(
-        all_models.get(p), all_models, custom_config)
+    r = _build_parameter(all_models.get(p), all_models, custom_config)
 
-    return {
-        "msg_prefix": msg_prefix,
-        "body": body,
-        "crud": "r",
-        "original_body": all_models.get(p)
-    }
+    r["crud"] = "r"
+
+    return r
 
 
 def _delete_api_info(api, all_models, custom_config):
-    return {
-        "crud": "d"
-    }
+    r = {"crud": "d"}
+
+    p = api.get("request_body", {}).get("datatype", "")
+    if p in all_models:
+        v = _build_parameter(all_models.get(p), all_models, custom_config)
+
+        r.update(v)
+
+    return r
 
 
 def _update_api_info(api, all_models, custom_config):
@@ -73,15 +77,10 @@ def _update_api_info(api, all_models, custom_config):
         raise Exception("It can not build update parameter, "
                         "the datatype(%s) is not a struct" % p)
 
-    msg_prefix, body = _build_parameter(
-        all_models.get(p), all_models, custom_config)
+    r = _build_parameter(all_models.get(p), all_models, custom_config)
 
-    return {
-        "msg_prefix": msg_prefix,
-        "body": body,
-        "crud": "u",
-        "original_body": all_models.get(p)
-    }
+    r["crud"] = "u"
+    return r
 
 
 def _list_api_info(api, all_models, custom_config):
@@ -112,25 +111,15 @@ def _other_api_info(api, all_models, custom_config):
                         "create/read/update/delete/list api")
     r["crud"] = crud
 
+    p = ""
     if crud.find("r") != -1:
         p = api.get("response", {}).get("datatype", "")
     else:
         p = api.get("request_body", {}).get("datatype", "")
 
     if p in all_models:
-        msg_prefix, body = _build_parameter(
-            all_models.get(p), all_models, custom_config)
-
-        r["msg_prefix"] = msg_prefix
-        r["body"] = body
-        r["original_body"] = all_models.get(p)
-
-    if custom_config.get("exclude_for_schema"):
-        r["exclude_for_schema"] = True
-
-    p = custom_config.get("path_parameter")
-    if p:
-        r["path_parameter"] = p
+        v = _build_parameter(all_models.get(p), all_models, custom_config)
+        r.update(v)
 
     return r
 
@@ -181,6 +170,13 @@ def build_resource_api_info(api_yaml, all_models, custom_configs):
         r["verb"] = api["method"].upper()
         r["async"] = v.get("async")
         r["default_value"] = v.get("default_value")
+
+        if v.get("exclude_for_schema"):
+            r["exclude_for_schema"] = True
+
+        p = v.get("path_parameter")
+        if p:
+            r["path_parameter"] = p
 
         _remove_project(r)
 

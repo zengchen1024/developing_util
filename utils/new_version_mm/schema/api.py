@@ -10,7 +10,6 @@ class ApiBase(object):
         self._path = ""
         self._verb = ""
         self._op_id = ""
-        self._msg_prefix = ""
         self._parameters = None
         self._async = None
         self.service_type = ""
@@ -33,10 +32,9 @@ class ApiBase(object):
         self._path = api["path"]
         self._verb = api["method"].upper()
         self._op_id = api_info["op_id"]
-        self._msg_prefix = api_info.get("msg_prefix", "")
 
         crud = api_info["crud"]
-        if crud.find("c") != -1 or crud.find("u") != -1:
+        if crud != "" and crud != "r":
             self._parameters = mm_param.build(
                 api_info.get("original_body", []), all_models)
 

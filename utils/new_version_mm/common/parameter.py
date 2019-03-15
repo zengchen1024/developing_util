@@ -4,7 +4,7 @@ import mm_param
 def build_resource_params(api_info, all_models):
 
     properties = None
-    for i in "cru":
+    for i in "crud":
         for k, v in api_info.items():
             if v["crud"].find(i) != -1 and (not v.get("exclude_for_schema")):
                 r = _build_params(v, all_models)
