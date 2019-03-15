@@ -90,8 +90,11 @@ class _Tree(object):
         except Exception as ex:
             raise Exception("%s%s" % (ex_msg, ex))
 
-        parent.add_child(self.find_param(v[0]))
-        self.delete(v[0])
+        # must run find, delete then add. if add before delete, then there is
+        # no effect, because it will be delete from new parent.
+        p = self.find_param(v[0])
+        p.parent.delete_child(p)
+        parent.add_child(p)
 
     def merge(self, argv):
         """ merge node1 with node2 """
