@@ -11,6 +11,10 @@ class _Tree(object):
         for v in self._p.values():
             v.parent = self
 
+    @property
+    def parent(self):
+        return None
+
     def child(self, key):
         if key in self._p:
             return self._p[key]
@@ -19,6 +23,7 @@ class _Tree(object):
 
     def add_child(self, child):
         self._p[child.get_item("name")] = child
+        child.parent = self
 
     def delete_child(self, child):
         self._p.pop(child.get_item("name"))

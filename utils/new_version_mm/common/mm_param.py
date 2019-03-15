@@ -357,6 +357,7 @@ class MMNestedObject(Basic):
             self.set_item("properties", v)
 
         v[child.get_item("name")] = child
+        child.parent = self
 
     def delete_child(self, child):
         v = self.get_item("properties")
@@ -422,6 +423,7 @@ class MMNestedObject(Basic):
 
                 callback(v, None, Merge_Level_Child)
                 self_properties[k] = v
+                v.parent = self
             else:
                 self_properties[k].merge(v, callback, Merge_Level_Child)
 
@@ -469,6 +471,7 @@ class MMArray(Basic):
             self.set_item("item_type", v)
 
         v[child.get_item("name")] = child
+        child.parent = self
 
     def delete_child(self, child):
         v = self.get_item("item_type")
@@ -562,6 +565,7 @@ class MMArray(Basic):
 
                 callback(v, None, Merge_Level_Child)
                 self_item_type[k] = v
+                v.parent = self
             else:
                 self_item_type[k].merge(v, callback, Merge_Level_Child)
 
