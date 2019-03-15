@@ -146,8 +146,10 @@ class Basic(object):
         indent += 2
         for k in keys:
             v = self._items[k]
-            if v.get("param_yaml") is not None:
-                s = v["param_yaml"](indent, k, v["value"])
+            val = v["value"]
+            f = v.get("param_yaml")
+            if val and f:
+                s = f(indent, k, val)
                 if s:
                     r.append(s)
         return r
@@ -224,9 +226,6 @@ class MMString(Basic):
         super(MMString, self).__init__()
         self._mm_type = "!ruby/object:Api::Type::String"
 
-    def clone(self):
-        return self.__class__()
-
 
 class MMInteger(Basic):
     def __init__(self):
@@ -235,9 +234,6 @@ class MMInteger(Basic):
 
         self._items["default"]["yaml"] = (
             lambda n, k, v: _indent(n, k, str(v)))
-
-    def clone(self):
-        return self.__class__()
 
 
 class MMBoolean(Basic):
@@ -248,17 +244,11 @@ class MMBoolean(Basic):
         self._items["default"]["yaml"] = (
             lambda n, k, v: _indent(n, k, str(v).lower()))
 
-    def clone(self):
-        return self.__class__()
-
 
 class MMTime(Basic):
     def __init__(self):
         super(MMTime, self).__init__()
         self._mm_type = "!ruby/object:Api::Type::Time"
-
-    def clone(self):
-        return self.__class__()
 
 
 class MMNameValues(Basic):
@@ -276,9 +266,6 @@ class MMNameValues(Basic):
                 "yaml": lambda n, k, v: _indent(n, k, v),
             }
         })
-
-    def clone(self):
-        return self.__class__()
 
     def init(self, param, parent):
         super(MMNameValues, self).init(param, parent)
@@ -319,13 +306,6 @@ class MMEnum(Basic):
     @property
     def real_type(self):
         return self.get_item("element_type")
-
-    def clone(self):
-        i = self.__class__()
-        i.set_item("values", self.get_item("values"))
-        i.set_item("element_type", self.get_item("element_type"))
-
-        return i
 
     @staticmethod
     def _values_yaml(indent, k, v):
@@ -369,9 +349,6 @@ class MMNestedObject(Basic):
             "yaml": self._properties_yaml,
             "param_yaml": self._properties_param_yaml
         }
-
-    def clone(self):
-        return self.__class__()
 
     def add_child(self, child):
         v = self.get_item("properties")
@@ -484,15 +461,6 @@ class MMArray(Basic):
             "value": None,
             "yaml": lambda n, k, v: _indent(n, k, str(v)),
         }
-
-    def clone(self):
-        i = self.__class__()
-
-        v = self.get_item("item_type")
-        if isinstance(v, str):
-            i.set_item("item_type", v)
-
-        return i
 
     def add_child(self, child):
         v = self.get_item("item_type")
