@@ -3,26 +3,44 @@ import re
 from preprocess import preprocess
 
 
+def _get_array_path(index, body, all_models):
+    if not index:
+        return []
+
+    r = []
+    items = index.split(".")
+    for i in range(len(items)):
+        s = ".".join(items[:(i + 1)])
+        j, parent = find_parameter(s, body, all_models)
+        item = parent[i]
+        if item.get("is_array"):
+            r.append(s)
+
+    return r
+
+
 def _build_parameter(body, all_models, custom_config):
+    if len(body) == 0:
+        raise Exception("Can't parse message prefix, the struct is empty")
+
     cmds = custom_config.get("parameter_preprocess")
     if cmds:
         preprocess(body, all_models, cmds)
 
     original_body = body
 
-    msg_prefix = None
-    if len(body) == 1:
-        p = body[0]
-        # p["datatype"] in all_models means p["datatype"] is a struct
-        # here, it only parses msg_prefix for struct like {msg_prefix: {}}
-        if p and p["datatype"] in all_models:
-            msg_prefix = p["name"]
-            body = all_models[p["datatype"]]
+    path = custom_config.get("path_to_body")
+    if path:
+        i, parent = find_parameter(path, body, all_models)
+        body = all_models[parent[i]["datatype"]]
+
+    ap = _get_array_path(path, original_body, all_models)
 
     return {
-        "msg_prefix": msg_prefix,
+        "msg_prefix": path,
         "body": body,
-        "original_body": original_body
+        "original_body": original_body,
+        "msg_prefix_array_path": ap,
     }
 
 
@@ -42,19 +60,6 @@ def _create_api_info(api, all_models, custom_config):
             raise Exception("Must set resource id path for create api")
 
         r["resource_id_path"] = p
-
-    return r
-
-
-def _read_api_info(api, all_models, custom_config):
-    p = api.get("response", {}).get("datatype", "")
-    if p not in all_models:
-        raise Exception("It can not build get parameter, "
-                        "the datatype(%s) is not a struct" % p)
-
-    r = _build_parameter(all_models.get(p), all_models, custom_config)
-
-    r["crud"] = "r"
 
     return r
 
@@ -83,15 +88,40 @@ def _update_api_info(api, all_models, custom_config):
     return r
 
 
+def _read_api_info(api, all_models, custom_config):
+    p = api.get("response", {}).get("datatype", "")
+    if p not in all_models:
+        raise Exception("It can not build get parameter, "
+                        "the datatype(%s) is not a struct" % p)
+
+    r = _build_parameter(all_models.get(p), all_models, custom_config)
+    r["crud"] = "r"
+
+    return r
+
+
 def _list_api_info(api, all_models, custom_config):
-    i = custom_config.get("identity")
-    if not i:
+    p = api.get("response", {}).get("datatype", "")
+    if p not in all_models:
+        raise Exception("It can not build list response body parameter, "
+                        "the datatype(%s) is not a struct" % p)
+
+    r = _build_parameter(all_models.get(p), all_models, custom_config)
+
+    identity = custom_config.get("identity")
+    if not identity:
         raise Exception("Must set identity for list api")
 
-    return {
-        "identity": i,
+    m = [i["name"] for i in r["body"]]
+    for i in identity:
+        if i not in m:
+            raise Exception("Unknown identity parameter(%s) for list api" % i)
+
+    r.update({
+        "identity": identity,
         "crud": 'r'
-    }
+    })
+    return r
 
 
 def _other_api_info(api, all_models, custom_config):
