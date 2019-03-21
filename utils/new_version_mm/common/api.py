@@ -1,5 +1,6 @@
 import re
 
+from preprocess import find_parameter
 from preprocess import preprocess
 
 
@@ -40,7 +41,7 @@ def _build_parameter(body, all_models, custom_config):
         "msg_prefix": path,
         "body": body,
         "original_body": original_body,
-        "msg_prefix_array_path": ap,
+        "msg_prefix_array_items": ap,
     }
 
 

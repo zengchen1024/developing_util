@@ -21,7 +21,7 @@ def _find_struct(datatype, all_models):
                     "in all models" % datatype)
 
 
-def _find_parameter(name, struct, all_models):
+def find_parameter(name, struct, all_models):
     ns = name
     if isinstance(name, str):
         ns = name.split(".")
@@ -48,7 +48,7 @@ def _find_parameter(name, struct, all_models):
     if len(ns) == 1:
         return index, struct
 
-    return _find_parameter(
+    return find_parameter(
         ns[1:],
         _find_struct(p["datatype"], all_models),
         all_models)
@@ -72,5 +72,5 @@ def preprocess(struct, all_models, cmds):
         if not f:
             raise Exception("Unknown pre-process cmd(%s)" % cmd[0])
 
-        index, parent = _find_parameter(cmd[1], struct, all_models)
+        index, parent = find_parameter(cmd[1], struct, all_models)
         f(index, parent, *cmd[2:])

@@ -8,6 +8,15 @@
         resource_id_path: {{resource_id_path}}
         {{/resource_id_path}}
         service_type: '{{service_type}}'
+        {{#msg_prefix}}
+        msg_prefix: '{{msg_prefix}}'
+        {{/msg_prefix}}
+        {{#has_msg_prefix_array_items}}
+        msg_prefix_array_items:
+        {{#msg_prefix_array_items}}
+          - '{{msg_prefix_array_item}}'
+        {{/msg_prefix_array_items}}
+        {{/has_msg_prefix_array_items}}
         {{#action}}
           {{#when}}
         when: "{{when}}"

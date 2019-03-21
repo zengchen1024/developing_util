@@ -13,6 +13,8 @@ class ApiBase(object):
         self._parameters = None
         self._async = None
         self.service_type = ""
+        self._msg_prefix = ""
+        self._msg_prefix_array_items = None
 
     def render(self):
         v = self._render_data()
@@ -32,11 +34,13 @@ class ApiBase(object):
         self._path = api["path"]
         self._verb = api["method"].upper()
         self._op_id = api_info["op_id"]
+        self._msg_prefix = api_info.get("msg_prefix")
+        self._msg_prefix_array_items = api_info.get("msg_prefix_array_items")
 
         crud = api_info["crud"]
         if crud != "" and crud != "r":
             self._parameters = mm_param.build(
-                api_info.get("original_body", []), all_models)
+                api_info.get("body", []), all_models)
 
         if self._parameters:
             if not api_info.get("exclude_for_schema"):
@@ -63,15 +67,25 @@ class ApiBase(object):
             self._async = ac
 
     def _render_data(self):
-        return {
+        r = {
             "api_key":   self._name,
             "api_type": "ApiBasic",
             "name":      self._name,
             "path":      self._path,
             "verb":      self._verb,
             "async":     self._async,
-            "service_type": self.service_type
+            "service_type": self.service_type,
+            "msg_prefix": self._msg_prefix
         }
+
+        v = self._msg_prefix_array_items
+        if isinstance(v, list) and len(v) > 0:
+            r["has_msg_prefix_array_items"] = True
+
+            r["msg_prefix_array_items"] = [
+                {"msg_prefix_array_item": i} for i in v]
+
+        return r
 
     def _generate_parameter_config(self):
 

@@ -26,13 +26,9 @@ def _build_params(api_info, all_models):
             n.set_item("required", None)
 
         op = api_info["op_id"]
-        msg_prefix = api_info["msg_prefix"]
 
         if n.parent is None:
-            if msg_prefix is None:
-                n.path[op] = n.get_item("name")
-            else:
-                n.path[op] = "%s.%s" % (msg_prefix, n.get_item("name"))
+            n.path[op] = n.get_item("name")
 
         else:
             n.path[op] = "%s.%s" % (n.parent.path[op], n.get_item("name"))
