@@ -1,7 +1,41 @@
 import pystache
 
+from common.utils import find_property
 from common.utils import remove_none
 from common import mm_param
+
+
+def _build_field(op_id, properties, parameters):
+
+    def _build_index(o):
+        path = []
+        while o is not None:
+            path.append(o.get_item("name"))
+            o = o.parent
+        path.reverse()
+        return ".".join(path)
+
+    r = {}
+
+    def _build_map(o):
+        target = o.path.get(op_id)
+        if not target:
+            return
+
+        r[target] = _build_index(o)
+
+    for o in properties.values():
+        o.parent = None
+
+        o.traverse(_build_map)
+
+    def _set_field(o):
+        o.set_item("field", r.get(_build_index(o)))
+
+    for o in parameters.values():
+        o.parent = None
+
+        o.traverse(_set_field)
 
 
 class ApiBase(object):
@@ -9,12 +43,12 @@ class ApiBase(object):
         self._name = name
         self._path = ""
         self._verb = ""
-        self._op_id = ""
         self._parameters = None
         self._async = None
         self.service_type = ""
         self._msg_prefix = ""
         self._msg_prefix_array_items = None
+        self._render_parameters = True
 
     def render(self):
         v = self._render_data()
@@ -24,8 +58,10 @@ class ApiBase(object):
                 "template/resource_api.mustache", v)
         ]
 
-        if self._parameters:
-            r.extend(self._generate_parameter_config())
+        if self._render_parameters:
+            c = self._generate_parameter_config()
+            if c:
+                r.extend(c)
 
         return r
 
@@ -33,22 +69,20 @@ class ApiBase(object):
         api = api_info["api"]
         self._path = api["path"]
         self._verb = api["method"].upper()
-        self._op_id = api_info["op_id"]
         self._msg_prefix = api_info.get("msg_prefix")
         self._msg_prefix_array_items = api_info.get("msg_prefix_array_items")
 
-        crud = api_info["crud"]
-        if crud != "" and crud != "r":
-            self._parameters = mm_param.build(
-                api_info.get("body", []), all_models)
+        body = api_info.get("body")
+        if isinstance(body, list) and body:
+            self._parameters = mm_param.build(body, all_models)
 
-        if self._parameters:
+            dv = api_info.get("default_value", {})
+            if dv:
+                for k, v in dv.items():
+                    find_property(self._parameters, k).set_item("default", v)
+
             if not api_info.get("exclude_for_schema"):
-                self._build_field(properties)
-
-            v = api_info.get("default_value")
-            if v:
-                self._set_default_valuse(v)
+                _build_field(api_info["op_id"], properties, self._parameters)
 
         ac = api_info.get("async")
         if ac:
@@ -106,55 +140,6 @@ class ApiBase(object):
             r.extend(_generate_yaml(self._parameters, indent + 2))
 
         return r
-
-    def child(self, key):
-        if key in self._parameters:
-            return self._parameters[key]
-
-        raise Exception("parent:root, no child with key(%s)" % key)
-
-    def _find_param(self, path):
-        obj = self
-        for k in path.split('.'):
-            obj = obj.child(k.strip())
-
-        return obj
-
-    def _build_field(self, properties):
-
-        def _build_index(o):
-            path = []
-            while o is not None:
-                path.append(o.get_item("name"))
-                o = o.parent
-            path.reverse()
-            return ".".join(path)
-
-        r = {}
-
-        def _build_map(o):
-            target = o.path.get(self._op_id)
-            if not target:
-                return
-
-            r[target] = _build_index(o)
-
-        for o in properties.values():
-            o.parent = None
-
-            o.traverse(_build_map)
-
-        def _set_field(o):
-            o.set_item("field", r.get(_build_index(o)))
-
-        for o in self._parameters.values():
-            o.parent = None
-
-            o.traverse(_set_field)
-
-    def _set_default_valuse(self, values):
-        for k, v in values.items():
-            self._find_param(k).set_item("default", v)
 
 
 class ApiCreate(ApiBase):
@@ -228,22 +213,24 @@ class ApiOther(ApiBase):
 
 
 class ApiList(ApiBase):
-    def __init__(self):
+    def __init__(self, read_api):
         super(ApiList, self).__init__("list")
 
         self._query_params = None
-        self._identity = []
-        self._msg_prefix = ""
+        self._identity = None
+
+        self._read_api = read_api
 
     def _render_data(self):
         v = super(ApiList, self)._render_data()
 
         v.update({
-            "identity": [{"name": i} for i in self._identity],
-            "query_params": self._query_params,
-            "list_msg_prefix": self._msg_prefix,
-            "api_type":         "ApiList"
-
+            "api_type": "ApiList",
+            "identity": [
+                {"name": i, "ref": j} for i, j in self._identity.items()],
+            "has_identity":     True,
+            "query_params":     self._query_params,
+            "has_query_params": len(self._query_params) > 0,
         })
 
         return v
@@ -251,10 +238,24 @@ class ApiList(ApiBase):
     def init(self, api_info, all_models, properties):
         super(ApiList, self).init(api_info, all_models, properties)
 
-        api = api_info["api"]
+        v = {i: self._parameters[i] for i in api_info["identity"]}
+        if self._read_api:
+            _build_field(self._read_api["op_id"], properties, v)
+        elif api_info.get("exclude_for_schema"):
+            raise Exception("can't build field for identity of list api")
+
+        self._identity = {k: i.get_item("field") for k, i in v.items()}
+
+        v = ["marker", "offset", "limit"]
+        for i in self._identity:
+            v.append(i)
+
         self._query_params = [
-            {"name": i["name"]} for i in api.get("query_params", {})]
-        self._msg_prefix = api_info.get("msg_prefix")
+            {"name": i["name"]}
+            for i in api_info["api"].get("query_params", {}) if i in v
+        ]
+
+        self._render_parameters = (not self._read_api)
 
 
 def build_resource_api_config(api_info, all_models, properties,
@@ -273,7 +274,7 @@ def build_resource_api_config(api_info, all_models, properties,
         elif t == "create":
             obj = ApiCreate()
         elif t == "list":
-            obj = ApiList()
+            obj = ApiList(api_info.get("read"))
         else:
             obj = ApiBase(t)
 

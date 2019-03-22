@@ -1,11 +1,10 @@
 import pystache
-import re
 
 from common.utils import remove_none
 
 
 class _Resource(object):
-    def __init__(self, name, desc, parameter, properties):
+    def __init__(self, name, desc, properties, parameter=None):
         self._name = name
         self._description = desc
         self.version = ""
@@ -49,17 +48,69 @@ class _Resource(object):
         return r
 
 
+def _set_output(properties):
+    def _output(n):
+        p = n.parent
+        if n.get_item("crud") == 'r' and (
+                p is None or p.get_item("crud") != 'r'):
+            n.set_item("output", True)
+
+    for v in properties.values():
+        v.parent = None
+        v.traverse(_output)
+
+
+def _set_attributes(api_info, properties):
+    info = {v["op_id"]: v["crud"] for v in api_info.values()}
+    read_apis = {
+        v["op_id"]: v["op_id"] if v.get("type") is None else v["type"]
+        for v in api_info.values() if v["crud"].find("r") != -1
+    }
+
+    def _set_crud(n, leaf):
+        m = {"c": 0, "r": 0, "u": 0, "d": 0}
+
+        if leaf:
+            for v in n.path:
+                m[info[v]] += 1
+
+            if m["r"] > 1:
+                raise Exception("there are more than one read api have the "
+                                "same parameter for property(%s), please "
+                                "delete them to leave only "
+                                "one" % n.get_item("name"))
+
+        else:
+            for i in n.childs():
+                for j in i.get_item("crud"):
+                    m[j] = 1
+
+        n.set_item("crud", "".join([i for i in "cru" if m[i]]))
+
+    def _set_field(n):
+        if n.get_item("crud").find("r") != -1:
+            for k, v in n.path.items():
+                if info[k] == "r":
+                    n.set_item("field", read_apis[k] + "." + v)
+
+    def callbacks(n, leaf):
+        _set_crud(n, leaf)
+        _set_field(n)
+
+    for i in properties.values():
+        i.parent = None
+        i.post_traverse(callbacks)
+
+
 def build_resource_config(api_info, properties, resource_name,
                           resource_desc, version, **kwargs):
-    params = {}
-    pros = {}
-    for k, v in properties.items():
-        if "r" in v.get_item("crud"):
-            pros[k] = v
-        else:
-            params[k] = v
 
-    resource = _Resource(resource_name, resource_desc, params, pros)
+    _set_attributes(api_info, properties)
+
+    _set_output(properties)
+
+    resource = _Resource(resource_name, resource_desc, properties)
 
     resource.version = version
+
     return resource.render()

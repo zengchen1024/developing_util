@@ -33,6 +33,18 @@
         crud: "{{crud}}"
           {{/crud}}
         {{/other}}
+	{{#has_query_params}}
+	query_params:
+	{{#query_params}}
+	  - '{{name}}'
+	{{/query_params}}
+	{{/has_query_params}}
+	{{#has_identity}}
+	identity:
+	{{#identity}}
+	  {{name}}: '{{ref}}'
+	{{/identity}}
+	{{/has_identity}}
         {{#async}}
         async: !ruby/object:Api::Async
           {{#query_status}}

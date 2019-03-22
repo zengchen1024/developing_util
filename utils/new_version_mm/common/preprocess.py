@@ -46,7 +46,7 @@ def find_parameter(name, struct, all_models):
         raise Exception("Can't find the parameter(%s) in struct" % n)
 
     if len(ns) == 1:
-        return index, struct
+        return index, struct, _find_struct(p["datatype"], all_models)
 
     return find_parameter(
         ns[1:],
@@ -72,5 +72,5 @@ def preprocess(struct, all_models, cmds):
         if not f:
             raise Exception("Unknown pre-process cmd(%s)" % cmd[0])
 
-        index, parent = find_parameter(cmd[1], struct, all_models)
+        index, parent, _ = find_parameter(cmd[1], struct, all_models)
         f(index, parent, *cmd[2:])

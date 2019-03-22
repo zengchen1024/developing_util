@@ -12,8 +12,8 @@ def _get_array_path(index, body, all_models):
     items = index.split(".")
     for i in range(len(items)):
         s = ".".join(items[:(i + 1)])
-        j, parent = find_parameter(s, body, all_models)
-        item = parent[i]
+        j, parent, _ = find_parameter(s, body, all_models)
+        item = parent[j]
         if item.get("is_array"):
             r.append(s)
 
@@ -32,8 +32,7 @@ def _build_parameter(body, all_models, custom_config):
 
     path = custom_config.get("path_to_body")
     if path:
-        i, parent = find_parameter(path, body, all_models)
-        body = all_models[parent[i]["datatype"]]
+        _, _, body = find_parameter(path, body, all_models)
 
     ap = _get_array_path(path, original_body, all_models)
 
@@ -108,6 +107,10 @@ def _list_api_info(api, all_models, custom_config):
                         "the datatype(%s) is not a struct" % p)
 
     r = _build_parameter(all_models.get(p), all_models, custom_config)
+
+    # body of list must be array, don't parse it as a map
+    if r["msg_prefix"] in r["msg_prefix_array_items"]:
+        r["msg_prefix_array_items"].remove(r["msg_prefix"])
 
     identity = custom_config.get("identity")
     if not identity:
@@ -215,5 +218,9 @@ def build_resource_api_info(api_yaml, all_models, custom_configs):
         if not k1:
             k1 = k
         result[k1] = r
+
+    # avoid generating properties of both read and list
+    if "read" in result and "list" in result:
+        result["list"]["exclude_for_schema"] = True
 
     return result

@@ -16,8 +16,8 @@ def generate_resource_properties(api_yaml, all_models, tag, custom_configs):
     adjust(custom_configs.get("adjust", []), properties,
            api_info["create"]["op_id"])
 
-    _set_property(api_info, properties)
-    _set_output(properties)
+    # _set_property(api_info, properties)
+    # _set_output(properties)
 
     _change_path_parameter(api_info, properties)
 
