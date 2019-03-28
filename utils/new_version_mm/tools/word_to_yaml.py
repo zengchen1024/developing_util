@@ -1,10 +1,12 @@
 from collections import namedtuple
 import docx
+import os
 import pystache
 import re
 import sys
 sys.path.append("..")
 
+from common.utils import normal_dir
 from common.utils import write_file
 
 
@@ -206,12 +208,16 @@ def run(file_name, output):
 
     s = pystache.Renderer().render_path("struct.mustache", {"structs": data})
 
-    write_file(output, [s])
+    if not os.path.isdir(output):
+        os.makedirs(output)
+
+    f = normal_dir(output) + file_name.split("/")[-1].split(".")[0] + ".yaml"
+    write_file(f, [s])
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Input docx file and output file")
+        print("Input docx file and output dir")
         sys.exit(1)
 
     try:
