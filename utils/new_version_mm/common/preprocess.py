@@ -1,8 +1,8 @@
 import re
 
 
-def _find_struct(datatype, all_models):
-    if "datatype" in [
+def find_struct(datatype, all_models):
+    if datatype in [
             'int', 'long', 'float', 'str', 'bool', 'date', 'datetime']:
         raise Exception("Can't find struct of datatype(%s)" % datatype)
 
@@ -11,11 +11,11 @@ def _find_struct(datatype, all_models):
 
     if datatype.startswith('list['):
         sub_datatype = re.match(r"list\[(.*)\]", datatype).group(1)
-        return _find_struct(sub_datatype, all_models)
+        return find_struct(sub_datatype, all_models)
 
     if datatype.startswith('dict('):
         sub_datatype = re.match(r"dict\(([^,]*), (.*)\)", datatype).group(2)
-        return _find_struct(sub_datatype, all_models)
+        return find_struct(sub_datatype, all_models)
 
     raise Exception("Can't find struct of datatype(%s) "
                     "in all models" % datatype)
@@ -46,11 +46,11 @@ def find_parameter(name, struct, all_models):
         raise Exception("Can't find the parameter(%s) in struct" % n)
 
     if len(ns) == 1:
-        return index, struct, _find_struct(p["datatype"], all_models)
+        return index, struct
 
     return find_parameter(
         ns[1:],
-        _find_struct(p["datatype"], all_models),
+        find_struct(p["datatype"], all_models),
         all_models)
 
 
@@ -60,17 +60,17 @@ def _change_type(index, parent, new_type):
 
 def preprocess(struct, all_models, cmds):
     m = {
-        # "alone_parameter": lambda i, p: p[i]["alone_parameter"] = True,
         "delete": lambda i, p: p.pop(i),
         "change_type": _change_type,
+        "set_value": lambda i, p, v: i,
     }
 
     for i in cmds:
-        cmd = i.split(" ")
+        cmd = re.sub(r" +", " ", i).split(" ")
 
         f = m.get(cmd[0])
         if not f:
             raise Exception("Unknown pre-process cmd(%s)" % cmd[0])
 
-        index, parent, _ = find_parameter(cmd[1], struct, all_models)
+        index, parent = find_parameter(cmd[1], struct, all_models)
         f(index, parent, *cmd[2:])

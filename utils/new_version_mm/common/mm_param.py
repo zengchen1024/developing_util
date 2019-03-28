@@ -135,6 +135,8 @@ class Basic(object):
 
         r = [
             "%s%s:\n" % (' ' * indent, self.get_item("name")),
+            "%sdatatype: %s\n" % (' ' * (indent + 2),
+                                  self._mm_type.split(":")[-1])
         ]
         for k, v in self._path.items():
             if v:

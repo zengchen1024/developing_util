@@ -77,7 +77,7 @@ class ApiBase(object):
             self._parameters = mm_param.build(body, all_models)
 
             dv = api_info.get("default_value", {})
-            if dv:
+            if isinstance(dv, dict):
                 for k, v in dv.items():
                     find_property(self._parameters, k).set_item("default", v)
 
@@ -85,12 +85,22 @@ class ApiBase(object):
                 _build_field(api_info["op_id"], properties, self._parameters)
 
         ac = api_info.get("async")
-        if ac:
-            p = ac.get("query_status", {}).get("path_parameter")
-            if p:
-                r = [{"key": k, "value": v} for k, v in p.items()]
-                ac["query_status"]["path_parameter"] = r
-                ac["query_status"]["has_path_parameter"] = True
+        if ac and isinstance(ac, dict):
+
+            qs = ac.get("query_status")
+            if qs and isinstance(qs, dict):
+
+                p = qs.get("path_parameter")
+                if p and isinstance(p, dict):
+                    r = [{"key": k, "value": v} for k, v in p.items()]
+                    ac["query_status"]["path_parameter"] = r
+                    ac["query_status"]["has_path_parameter"] = True
+
+                if "service_type" not in qs:
+                    qs["service_type"] = self.service_type
+
+                if "name" not in qs:
+                    qs["name"] = self._name + "_async"
 
             for k in ["pending", "complete"]:
                 p = ac.get("check_status", {}).get(k)
@@ -185,11 +195,12 @@ class ApiAction(ApiBase):
         return v
 
     def init(self, api_info, all_models, properties):
-        super(ApiAction, self).init(api_info, all_models, properties)
-
         self._name = api_info["op_id"]
         self._when = api_info.get("when")
         self._path_parameter = api_info.get("path_parameter")
+
+        # super.init will use self._name
+        super(ApiAction, self).init(api_info, all_models, properties)
 
 
 class ApiOther(ApiBase):
@@ -206,10 +217,11 @@ class ApiOther(ApiBase):
         return v
 
     def init(self, api_info, all_models, properties):
-        super(ApiOther, self).init(api_info, all_models, properties)
-
         self._name = api_info["op_id"]
         self._crud = api_info.get("crud")
+
+        # super.init will use self._name
+        super(ApiOther, self).init(api_info, all_models, properties)
 
 
 class ApiList(ApiBase):
@@ -278,8 +290,9 @@ def build_resource_api_config(api_info, all_models, properties,
         else:
             obj = ApiBase(t)
 
-        obj.init(v, all_models, properties)
+        # obj.init will use obj.service_type
         obj.service_type = service_type
+        obj.init(v, all_models, properties)
         r.extend(obj.render())
 
     return r

@@ -1,6 +1,7 @@
 import re
 
 from preprocess import find_parameter
+from preprocess import find_struct
 from preprocess import preprocess
 
 
@@ -12,7 +13,7 @@ def _get_array_path(index, body, all_models):
     items = index.split(".")
     for i in range(len(items)):
         s = ".".join(items[:(i + 1)])
-        j, parent, _ = find_parameter(s, body, all_models)
+        j, parent = find_parameter(s, body, all_models)
         item = parent[j]
         if item.get("is_array"):
             r.append(s)
@@ -24,23 +25,32 @@ def _build_parameter(body, all_models, custom_config):
     if len(body) == 0:
         raise Exception("Can't parse message prefix, the struct is empty")
 
-    cmds = custom_config.get("parameter_preprocess")
-    if cmds:
+    default_value = {}
+    cmds = custom_config.get("parameter_preprocess", [])
+    if cmds and isinstance(cmds, list):
         preprocess(body, all_models, cmds)
 
-    original_body = body
+        for i in cmds:
+            if i.find("set_value") != -1:
+                v = re.sub(r" +", " ", i).split(" ")
+                default_value[v[1]] = v[2]
 
+    array_path = []
     path = custom_config.get("path_to_body")
     if path:
-        _, _, body = find_parameter(path, body, all_models)
+        array_path = _get_array_path(path, body, all_models)
 
-    ap = _get_array_path(path, original_body, all_models)
+        i, parent = find_parameter(path, body, all_models)
+        body = find_struct(parent[i]["datatype"], all_models)
+
+        default_value = {
+            k.lstrip(path + "."): v for k, v in default_value.items()}
 
     return {
         "msg_prefix": path,
         "body": body,
-        "original_body": original_body,
-        "msg_prefix_array_items": ap,
+        "default_value": default_value,
+        "msg_prefix_array_items": array_path,
     }
 
 
@@ -203,7 +213,6 @@ def build_resource_api_info(api_yaml, all_models, custom_configs):
         r["api"] = api
         r["verb"] = api["method"].upper()
         r["async"] = v.get("async")
-        r["default_value"] = v.get("default_value")
 
         if v.get("exclude_for_schema"):
             r["exclude_for_schema"] = True

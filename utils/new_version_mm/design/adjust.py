@@ -96,18 +96,21 @@ class _Tree(object):
         p.parent.delete_child(p)
         parent.add_child(p)
 
-    def merge(self, argv):
-        """ merge node1 with node2 """
+    def merge_to(self, argv):
+        """ merge node1 to node2 """
 
-        ex_msg = "Execute cmd(merge %s) failed, " % argv
+        ex_msg = "Execute cmd(merge_to %s) failed, " % argv
 
         v = argv.split(" ")
         if len(v) != 2:
             raise Exception("%smust input node1 and node2" % ex_msg)
 
-        self.find_param(v[0]).merge(self.find_param(v[1]), _merge_to, None)
+        src = v[0]
+        target = v[1]
+        self.find_param(target).merge(
+            self.find_param(src), _merge_to, None)
 
-        self.delete(v[1])
+        self.delete(src)
 
     def _raise_if_duplicate_name(self, parent, node_name):
         try:
@@ -172,7 +175,7 @@ def adjust(adjust_cmds, properties, create_api_id):
     fm = {
         'rename': rn.rename,
         'delete': rn.delete,
-        'merge': rn.merge,
+        'merge_to': rn.merge_to,
         'move': rn.move,
         'set': rn.set_property,
         'add_path_param': functools.partial(rn.add_path_param, create_api_id)
