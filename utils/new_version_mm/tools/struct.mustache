@@ -30,6 +30,15 @@
           $ref: "{{items.$ref}}"
           {{/items.$ref}}
         {{/items}}
+        {{#additionalProperties}}
+        additionalProperties:
+          {{#additionalProperties.type}}
+          type: {{additionalProperties.type}}
+          {{/additionalProperties.type}}
+          {{#additionalProperties.$ref}}
+          $ref: "{{additionalProperties.$ref}}"
+          {{/additionalProperties.$ref}}
+        {{/additionalProperties}}
     {{/properties}}
 
 {{/structs}}

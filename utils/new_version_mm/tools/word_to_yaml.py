@@ -128,23 +128,42 @@ def _parse_datatype(datatype):
             }
         }
 
-    m = re.match(r"^list\[object:|^\[object:|^list<object:|^jsonarray:", dt)
+    m = re.match(
+        r"^list\[object:|^\[object:|^list<object:|^jsonarray:|^array:", dt)
     if m:
-        n = datatype[m.end():]
-        if n[-1] in (']', '>'):
-            n = n[:-1]
+        t = datatype[m.end():]
+        if t[-1] in (']', '>'):
+            t = t[:-1]
+
+        item = None
+        if t in type_map:
+            item = {"type": type_map[t]}
+        else:
+            item = {"$ref": "#/definitions/%s" % t}
 
         return {
             "type": "array",
-            "items": {
-                "$ref": "#/definitions/%s" % n
-            }
+            "items": item
         }
 
     m = re.match(r"^object:|^jsonobject:|^dict:", dt)
     if m:
         return {
             "$ref": "#/definitions/%s" % datatype[m.end():]
+        }
+
+    m = re.match(r"^map:", dt)
+    if m:
+        t = datatype[m.end():]
+        ap = None
+        if t in type_map:
+            ap = {"type": type_map[t]}
+        else:
+            ap = {"$ref": "#/definitions/%s" % t}
+
+        return {
+            "type": "object",
+            "additionalProperties": ap
         }
 
     raise Exception("Unknown parameter type: %s" % datatype)
