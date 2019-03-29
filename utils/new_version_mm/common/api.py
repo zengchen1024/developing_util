@@ -25,15 +25,16 @@ def _build_parameter(body, all_models, custom_config):
     if len(body) == 0:
         raise Exception("Can't parse message prefix, the struct is empty")
 
-    default_value = {}
+    special_cmds = {"set_value": {}, "depends_on": {}}
     cmds = custom_config.get("parameter_preprocess", [])
     if cmds and isinstance(cmds, list):
         preprocess(body, all_models, cmds)
 
         for i in cmds:
-            if i.find("set_value") != -1:
-                v = re.sub(r" +", " ", i).split(" ")
-                default_value[v[1]] = v[2]
+            for j in special_cmds:
+                if i.find(j) != -1:
+                    v = re.sub(r" +", " ", i).split(" ")
+                    special_cmds[j][v[1]] = v[2]
 
     array_path = []
     path = custom_config.get("path_to_body")
@@ -43,13 +44,15 @@ def _build_parameter(body, all_models, custom_config):
         i, parent = find_parameter(path, body, all_models)
         body = find_struct(parent[i]["datatype"], all_models)
 
-        default_value = {
-            k.lstrip(path + "."): v for k, v in default_value.items()}
+        for k, v in special_cmds.items():
+            if v:
+                special_cmds[k] = {
+                    k1.lstrip(path + "."): v1 for k1, v1 in v.items()}
 
     return {
         "msg_prefix": path,
         "body": body,
-        "default_value": default_value,
+        "special_cmds": special_cmds,
         "msg_prefix_array_items": array_path,
     }
 

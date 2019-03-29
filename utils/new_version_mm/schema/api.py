@@ -72,18 +72,34 @@ class ApiBase(object):
         self._msg_prefix = api_info.get("msg_prefix")
         self._msg_prefix_array_items = api_info.get("msg_prefix_array_items")
 
-        body = api_info.get("body")
-        if isinstance(body, list) and body:
-            self._parameters = mm_param.build(body, all_models)
+        self._build_async_info(api_info)
 
-            dv = api_info.get("default_value", {})
-            if isinstance(dv, dict):
-                for k, v in dv.items():
-                    find_property(self._parameters, k).set_item("default", v)
+        body = api_info.get("body")
+        if body and isinstance(body, list):
+            self._parameters = mm_param.build(body, all_models)
 
             if not api_info.get("exclude_for_schema"):
                 _build_field(api_info["op_id"], properties, self._parameters)
 
+            self._exe_special_cmds(api_info)
+
+    def _exe_special_cmds(self, api_info):
+        cmds = api_info.get("special_cmds", {})
+        if not cmds:
+            return
+
+        dv = cmds.get("set_value")
+        if isinstance(dv, dict):
+            for k, v in dv.items():
+                find_property(self._parameters, k).set_item("default", v)
+
+        dv = cmds.get("depends_on")
+        if isinstance(dv, dict):
+            for k, v in dv.items():
+                p = find_property(self._parameters, k)
+                p.set_item("depends_on", p.parent.child(v).get_item("field"))
+
+    def _build_async_info(self, api_info):
         ac = api_info.get("async")
         if ac and isinstance(ac, dict):
 
