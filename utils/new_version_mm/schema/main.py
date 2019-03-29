@@ -78,10 +78,10 @@ def _generate_yaml(api_path, product_info, tag_info, output):
 
     write_file(output + "api.yaml", r)
 
-    _generate_platform_yaml(platform_config, output)
+    _generate_platform_yaml(platform_config, all_models, output)
 
 
-def _generate_platform_yaml(info, output):
+def _generate_platform_yaml(info, all_models, output):
     r = {
         "ansible": {
             "f": build_ansible_yaml,
@@ -100,7 +100,7 @@ def _generate_platform_yaml(info, output):
 
     for k, v in r.items():
         if v["data"]:
-            v["f"](v["data"], output)
+            v["f"](v["data"], all_models, output)
 
 
 def _get_cloud_info(cloud_name):

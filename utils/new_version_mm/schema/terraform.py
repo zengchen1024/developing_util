@@ -2,9 +2,10 @@ import pystache
 import re
 
 from common.utils import write_file, find_property
+from common.preprocess import find_parameter
 
 
-def build_terraform_yaml(info, output):
+def build_terraform_yaml(info, all_models, output):
     data = []
     for v in info:
         r = {}
@@ -14,15 +15,15 @@ def build_terraform_yaml(info, output):
         if examples:
             r.update(_generate_example_config(examples, v))
 
-        overrides = config.get("properties")
-        if overrides:
+        c = config.get("overrides")
+        if c:
             _generate_property_override(
-                overrides, v["api_info"], v["properties"],
+                c, v["api_info"], v["properties"], all_models,
                 v["resource_name"], r)
 
-        overrides = config.get("api_asyncs")
-        if overrides:
-            _generate_async_override(overrides, v["api_info"], r)
+        c = config.get("api_asyncs")
+        if c:
+            _generate_async_override(c, v["api_info"], r)
 
         if r:
             r["name"] = v["resource_name"]
@@ -34,12 +35,13 @@ def build_terraform_yaml(info, output):
     write_file(output + "terraform.yaml", [s])
 
 
-def _generate_property_override(overrides, api_info, properties,
+def _generate_property_override(overrides, api_info, properties, all_models,
                                 resource_name, result):
-    req_apis = {}
-    for v in api_info.values():
-        if v["crud"].find("r") == -1:
-            req_apis[v["op_id"]] = v.get("type", v["op_id"])
+    req_apis = {
+        v["op_id"]: v
+        for v in api_info.values()
+        if v["crud"].find("r") == -1
+    }
 
     override_properties = set(["to_request", "from_response"])
 
@@ -51,25 +53,33 @@ def _generate_property_override(overrides, api_info, properties,
             raise Exception("find unspported override properties(%s) "
                             "for resource(%s)" % (" ".join(e), resource_name))
 
-        prop = find_property(properties, path)
+        for k in override_properties:
+            v1 = v.get(k)
+            if not v1:
+                continue
 
-        v1 = v.get("to_request")
-        if v1:
-            for k, p in prop.path.items():
-                if k in req_apis:
-                    params.append({
-                        "prop_path": req_apis.get(k) + "." + p,
-                        "var_name": "to_request",
-                        "var_value": _process_lines(v1, 10)
-                    })
+            if k == "to_request":
+                pv = path.split(".")
+                api = req_apis.get(pv[0])
 
-        v1 = v.get("from_response")
-        if v1:
-                pros.append({
-                    "prop_path": path,
-                    "var_name": "from_response",
-                    "var_value": _process_lines(v1, 10)
-                })
+                if not api:
+                    raise Exception("the index(%s) is invalid, "
+                                    "unknown operation id" % path)
+
+                path = ".".join(pv[1:]).lstrip(
+                    api.get("msg_prefix")).lstrip(".")
+                find_parameter(path, api["body"], all_models)
+
+                path = "%s.%s" % (api.get("type", api["op_id"]), path)
+
+            else:
+                find_property(properties, path)
+
+            params.append({
+                "prop_path": path,
+                "var_name": k,
+                "var_value": _process_lines(v1, 10)
+            })
 
     if pros:
         result["properties"] = pros

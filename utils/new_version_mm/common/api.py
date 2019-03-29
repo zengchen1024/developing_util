@@ -179,13 +179,13 @@ def _remove_project(api_info):
 
         return path
 
-    api_info["api"]["path"] = _f(api_info["api"]["path"])
+    api_info["api"]["path"] = _f(api_info["api"]["path"]).lstrip("/")
 
     v = api_info["async"]
     if v:
         q = v.get("query_status")
         if q:
-            q["path"] = _f(q["path"])
+            q["path"] = _f(q["path"]).lstrip("/")
 
 
 def build_resource_api_info(api_yaml, all_models, custom_configs):

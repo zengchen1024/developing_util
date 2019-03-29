@@ -97,7 +97,8 @@ class ApiBase(object):
         if isinstance(dv, dict):
             for k, v in dv.items():
                 p = find_property(self._parameters, k)
-                p.set_item("depends_on", p.parent.child(v).get_item("field"))
+                p.set_item("field", p.parent.child(v).get_item("field"))
+                p.set_item("depends_on", v)
 
     def _build_async_info(self, api_info):
         ac = api_info.get("async")
