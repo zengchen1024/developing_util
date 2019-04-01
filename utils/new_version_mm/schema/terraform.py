@@ -39,7 +39,7 @@ def _generate_override(overrides, api_info, properties, all_models,
     api_async_overrides = {}
 
     for path, v in overrides.items():
-        if "to_request" in v:
+        if "to_request" in v or "to_request_method" in v:
             api_parameter_overrides[path] = v
 
         elif "from_response" in v:
@@ -76,8 +76,7 @@ def _generate_property_override(overrides, properties):
 
         pros.append({
             "prop_path": path,
-            "var_name": k,
-            "var_value": _process_lines(v.get(k), 10)
+            k: _process_lines(v.get(k), 10)
         })
 
     return {
@@ -93,7 +92,6 @@ def _generate_api_parameter_override(overrides, api_info, all_models):
         if v["crud"].find("r") == -1
     }
 
-    k = "to_request"
     params = []
     for path, v in overrides.items():
         pv = path.split(".")
@@ -109,11 +107,15 @@ def _generate_api_parameter_override(overrides, api_info, all_models):
 
         find_parameter(path, api["body"], all_models)
 
-        params.append({
-            "prop_path": "%s.%s" % (api.get("type", api["op_id"]), path),
-            "var_name": k,
-            "var_value": _process_lines(v.get(k), 10)
-        })
+        m = {"prop_path": "%s.%s" % (api.get("type", api["op_id"]), path)}
+
+        if "to_request" in v:
+            m["to_request"] = _process_lines(v.get("to_request"), 10)
+
+        elif "to_request_method" in v:
+            m["to_request_method"] = v.get("to_request_method")
+
+        params.append(m)
 
     return {
         "parameters": params,

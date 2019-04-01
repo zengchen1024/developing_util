@@ -31,8 +31,10 @@ overrides: !ruby/object:Provider::ResourceOverrides
     properties:
   {{#properties}}
       {{prop_path}}: !ruby/object:Provider::Terraform::PropertyOverride
-        {{var_name}}: |
-{{{var_value}}}
+        {{#from_response}}
+        from_response: |
+{{{from_response}}}
+        {{/from_response}}
   {{/properties}}
   {{/has_property_override}}
   {{#has_parameter_override}}
@@ -40,8 +42,13 @@ overrides: !ruby/object:Provider::ResourceOverrides
     api_parameters:
   {{#parameters}}
       {{prop_path}}: !ruby/object:Provider::Terraform::PropertyOverride
-        {{var_name}}: |
-{{{var_value}}}
+        {{#to_request}}
+        to_request: |
+{{{to_request}}}
+        {{/to_request}}
+        {{#to_request_method}}
+        to_request_method: '{{to_request_method}}'
+        {{/to_request_method}}
   {{/parameters}}
   {{/has_parameter_override}}
   {{#has_async_override}}
