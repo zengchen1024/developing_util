@@ -71,6 +71,24 @@ class _Tree(object):
         p.set_item("name", v[1])
         parent.add_child(p)
 
+    def default_value(self, argv):
+        ex_msg = "Execute cmd(default_value %s) failed, " % argv
+
+        v = argv.split(" ")
+        if len(v) != 2:
+            raise Exception("%smust input node and its default value" % ex_msg)
+
+        self.find_param(v[0]).set_item("default", v[1])
+
+    def change_required(self, argv):
+        ex_msg = "Execute cmd(change_required %s) failed, " % argv
+
+        v = argv.split(" ")
+        if len(v) != 2:
+            raise Exception("%smust input node and its value" % ex_msg)
+
+        self.find_param(v[0]).set_item("required", v[1] in ["true", "yes", 1])
+
     def delete(self, node):
         p = self.find_param(node)
         p.parent.delete_child(p)
@@ -178,7 +196,9 @@ def adjust(adjust_cmds, properties, create_api_id):
         'merge_to': rn.merge_to,
         'move': rn.move,
         'set': rn.set_property,
-        'add_path_param': functools.partial(rn.add_path_param, create_api_id)
+        'add_path_param': functools.partial(rn.add_path_param, create_api_id),
+        'default_value': rn.default_value,
+        'change_required': rn.change_required,
     }
 
     for cmds in adjust_cmds:
