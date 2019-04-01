@@ -82,4 +82,7 @@
           result: !ruby/object:Api::Async::Result
             field: '{{result}}'
           {{/result}}
+          {{#timeout}}
+          timeout: {{timeout}}
+          {{/timeout}}
         {{/async}}

@@ -17,13 +17,9 @@ def build_terraform_yaml(info, all_models, output):
 
         c = config.get("overrides")
         if c:
-            _generate_property_override(
+            _generate_override(
                 c, v["api_info"], v["properties"], all_models,
                 v["resource_name"], r)
-
-        c = config.get("api_asyncs")
-        if c:
-            _generate_async_override(c, v["api_info"], r)
 
         if r:
             r["name"] = v["resource_name"]
@@ -35,59 +31,118 @@ def build_terraform_yaml(info, all_models, output):
     write_file(output + "terraform.yaml", [s])
 
 
-def _generate_property_override(overrides, api_info, properties, all_models,
-                                resource_name, result):
+def _generate_override(overrides, api_info, properties, all_models,
+                       resource_name, result):
+
+    property_overrides = {}
+    api_parameter_overrides = {}
+    api_async_overrides = {}
+
+    for path, v in overrides.items():
+        if "to_request" in v:
+            api_parameter_overrides[path] = v
+
+        elif "from_response" in v:
+            property_overrides[path] = v
+
+        elif "async_status_check_func" in v:
+            api_async_overrides[path] = v
+
+        else:
+            raise Exception("find unspported override item(%s) for "
+                            "resource(%s)" % (
+                                " ".join(v.keys()), resource_name))
+
+    if property_overrides:
+        result.update(
+            _generate_property_override(property_overrides, properties))
+
+    if api_parameter_overrides:
+        result.update(
+            _generate_api_parameter_override(
+                api_parameter_overrides, api_info, all_models))
+
+    if api_async_overrides:
+        result.update(
+            _generate_api_async_override(api_async_overrides, api_info))
+
+
+def _generate_property_override(overrides, properties):
+    k = "from_response"
+    pros = []
+    for path, v in overrides.items():
+
+        find_property(properties, path)
+
+        pros.append({
+            "prop_path": path,
+            "var_name": k,
+            "var_value": _process_lines(v.get(k), 10)
+        })
+
+    return {
+        "properties": pros,
+        "has_property_override": True
+    }
+
+
+def _generate_api_parameter_override(overrides, api_info, all_models):
     req_apis = {
         v["op_id"]: v
         for v in api_info.values()
         if v["crud"].find("r") == -1
     }
 
-    override_properties = set(["to_request", "from_response"])
-
-    pros = []
+    k = "to_request"
     params = []
     for path, v in overrides.items():
-        e = set(v.keys()) - override_properties
-        if e:
-            raise Exception("find unspported override properties(%s) "
-                            "for resource(%s)" % (" ".join(e), resource_name))
+        pv = path.split(".")
 
-        for k in override_properties:
-            v1 = v.get(k)
-            if not v1:
-                continue
+        api = req_apis.get(pv[0])
+        if not api:
+            raise Exception("the index(%s) is invalid, "
+                            "unknown operation id" % path)
 
-            if k == "to_request":
-                pv = path.split(".")
-                api = req_apis.get(pv[0])
+        path = ".".join(pv[1:])
+        if api.get("msg_prefix"):
+            path = path.lstrip(api.get("msg_prefix") + ".")
 
-                if not api:
-                    raise Exception("the index(%s) is invalid, "
-                                    "unknown operation id" % path)
+        find_parameter(path, api["body"], all_models)
 
-                path = ".".join(pv[1:]).lstrip(
-                    api.get("msg_prefix")).lstrip(".")
-                find_parameter(path, api["body"], all_models)
+        params.append({
+            "prop_path": "%s.%s" % (api.get("type", api["op_id"]), path),
+            "var_name": k,
+            "var_value": _process_lines(v.get(k), 10)
+        })
 
-                path = "%s.%s" % (api.get("type", api["op_id"]), path)
+    return {
+        "parameters": params,
+        "has_parameter_override": True
+    }
 
-            else:
-                find_property(properties, path)
 
-            params.append({
-                "prop_path": path,
-                "var_name": k,
-                "var_value": _process_lines(v1, 10)
-            })
+def _generate_api_async_override(overrides, api_info):
+    req_apis = {
+        v["op_id"]: v
+        for v in api_info.values()
+        if v["crud"].find("r") == -1
+    }
 
-    if pros:
-        result["properties"] = pros
-        result["has_property_override"] = True
+    pros = []
+    for path, v in overrides.items():
+        if path not in req_apis:
+            raise Exception("the index(%s) is invalid, "
+                            "unknown operation id" % path)
+        api = req_apis[path]
+        pros.append({
+            "api": api.get("type", api["op_id"]),
+            "custom_status_check_func": v.get("async_status_check_func")
+        })
 
-    if params:
-        result["parameters"] = params
-        result["has_parameter_override"] = True
+    return {
+        "api_asyncs": pros,
+        "has_async_override": True
+    }
 
 
 def _process_lines(v, indent):
@@ -95,24 +150,6 @@ def _process_lines(v, indent):
         "%s%s" % (' ' * indent, row.strip().strip("\t"))
         for row in v.split("\n")
     ])
-
-
-def _generate_async_override(api_asyncs, api_info, result):
-    def _api_key(p):
-        for v in api_info.values():
-            if v["op_id"] == p:
-                return v.get("type", p)
-
-    if api_asyncs:
-        pros = []
-        for p, v1 in api_asyncs.items():
-            v2 = {"api": _api_key(p)}
-            v2.update(v1)
-
-            pros.append(v2)
-
-        result["api_asyncs"] = pros
-        result["has_async_override"] = True
 
 
 def _generate_example_config(examples, info):

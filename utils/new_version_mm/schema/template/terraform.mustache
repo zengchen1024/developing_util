@@ -27,6 +27,7 @@ overrides: !ruby/object:Provider::ResourceOverrides
   {{/examples}}
   {{/has_example}}
   {{#has_property_override}}
+
     properties:
   {{#properties}}
       {{prop_path}}: !ruby/object:Provider::Terraform::PropertyOverride
@@ -35,6 +36,7 @@ overrides: !ruby/object:Provider::ResourceOverrides
   {{/properties}}
   {{/has_property_override}}
   {{#has_parameter_override}}
+
     api_parameters:
   {{#parameters}}
       {{prop_path}}: !ruby/object:Provider::Terraform::PropertyOverride
@@ -43,6 +45,7 @@ overrides: !ruby/object:Provider::ResourceOverrides
   {{/parameters}}
   {{/has_parameter_override}}
   {{#has_async_override}}
+
     api_asyncs:
   {{#api_asyncs}}
       {{api}}: !ruby/object:Provider::AsyncOverride

@@ -58,10 +58,15 @@ def _change_type(index, parent, new_type):
     parent[index]["datatype"] = new_type
 
 
+def _change_required(index, parent, value):
+    parent[index]["mandatory"] = value in ["true", "yes", 1]
+
+
 def preprocess(struct, all_models, cmds):
     m = {
         "delete": lambda i, p: p.pop(i),
         "change_type": _change_type,
+        "change_required": _change_required,
 
         # set_value, depends_on: only check the index of parameter
         # it will be executed on schema stage, otherwise its value will be
