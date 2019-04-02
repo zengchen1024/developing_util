@@ -66,7 +66,8 @@ def preprocess(struct, all_models, cmds):
     m = {
         "delete": lambda i, p: p.pop(i),
         "change_type": _change_type,
-        "change_required": _change_required,
+        # support change_required at adjust stage
+        # "change_required": _change_required,
 
         # set_value, depends_on: only check the index of parameter
         # it will be executed on schema stage, otherwise its value will be

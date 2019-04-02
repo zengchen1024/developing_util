@@ -35,20 +35,14 @@ class _Tree(object):
 
         return obj
 
-    def set_property(self, argv):
-        ex_msg = "Execute cmd(set %s) failed, " % argv
+    def set_desc(self, argv):
+        ex_msg = "Execute cmd(set_desc %s) failed, " % argv
 
         v = argv.split(" ")
-        if len(v) < 3:
-            raise Exception("%smust input node, property and its new"
-                            " value" % ex_msg)
+        if len(v) < 2:
+            raise Exception("%smust input node and its new desc" % ex_msg)
 
-        c = "description"
-        if v[1] == c:
-            v[2] = argv[argv.find(c) + len(c) + 1:]
-
-        p = self.find_param(v[0])
-        p.set_item(v[1], v[2])
+        self.find_param(v[0]).set_item("description", argv.lstrip(v[0] + " "))
 
     def rename(self, argv):
         ex_msg = "Execute cmd(rename %s) failed, " % argv
@@ -195,7 +189,7 @@ def adjust(adjust_cmds, properties, create_api_id):
         'delete': rn.delete,
         'merge_to': rn.merge_to,
         'move': rn.move,
-        'set': rn.set_property,
+        'set_desc': rn.set_desc,
         'add_path_param': functools.partial(rn.add_path_param, create_api_id),
         'default_value': rn.default_value,
         'change_required': rn.change_required,
