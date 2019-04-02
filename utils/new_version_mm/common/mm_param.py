@@ -62,11 +62,6 @@ class Basic(object):
                 "yaml": lambda n, k, v: _indent(n, k, "\'%s\'" % v),
             },
 
-            "depends_on": {
-                "value": None,
-                "yaml": lambda n, k, v: _indent(n, k, "\'%s\'" % v),
-            },
-
             "is_id": {
                 "value": None,
                 "yaml": lambda n, k, v: _indent(n, k, str(v).lower()),
