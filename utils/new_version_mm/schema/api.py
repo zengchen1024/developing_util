@@ -49,6 +49,7 @@ class ApiBase(object):
         self._msg_prefix = ""
         self._msg_prefix_array_items = None
         self._render_parameters = True
+        self._has_response = False
 
     def render(self):
         v = self._render_data()
@@ -71,6 +72,8 @@ class ApiBase(object):
         self._verb = api["method"].upper()
         self._msg_prefix = api_info.get("msg_prefix")
         self._msg_prefix_array_items = api_info.get("msg_prefix_array_items")
+        self._has_response = (
+            api.get("response", {}).get("datatype") in all_models)
 
         self._build_async_info(api_info)
 
@@ -135,7 +138,8 @@ class ApiBase(object):
             "verb":      self._verb,
             "async":     self._async,
             "service_type": self.service_type,
-            "msg_prefix": self._msg_prefix
+            "msg_prefix": self._msg_prefix,
+            "has_response": str(self._has_response).lower(),
         }
 
         v = self._msg_prefix_array_items
