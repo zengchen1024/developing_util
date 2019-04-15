@@ -67,10 +67,14 @@ def _parse_word(file_name):
                 # table name
                 tn = cells[0]
                 continue
-            elif i == 1 and cells[0] == "Parameter":
-                # column description
+            elif i == 1:
+                # row 1 is may column description
                 column_desc = {v.lower(): j for j, v in enumerate(cells)}
-                continue
+                v = set(column_desc.keys()).intersection(
+                    set(["parameter", "mandatory", "type", "description"]))
+                if len(v) >= 3:
+                    continue
+                column_desc = None
 
             items = cells
             if column_desc:
@@ -131,7 +135,7 @@ def _parse_datatype(datatype):
         }
 
     m = re.match(
-        r"^list\[object:|^\[object:|^list<object:|^jsonarray:|^array:", dt)
+        r"^list\[object:|^\[object:|^list<object:|^jsonarray:|^array:|^list:", dt)
     if m:
         t = datatype[m.end():]
         if t[-1] in (']', '>'):
