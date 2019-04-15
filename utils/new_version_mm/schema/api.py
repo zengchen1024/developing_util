@@ -250,6 +250,7 @@ class ApiList(ApiBase):
 
         self._query_params = None
         self._identity = None
+        self._resource_id_path = ""
 
         self._read_api = read_api
 
@@ -263,6 +264,7 @@ class ApiList(ApiBase):
             "has_identity":     True,
             "query_params":     self._query_params,
             "has_query_params": len(self._query_params) > 0,
+            "resource_id_path": self._resource_id_path,
         })
 
         return v
@@ -278,16 +280,18 @@ class ApiList(ApiBase):
 
         self._identity = {k: i.get_item("field") for k, i in v.items()}
 
-        v = ["marker", "offset", "limit"]
+        v = ["marker", "offset", "limit", "start"]
         for i in self._identity:
             v.append(i)
 
         self._query_params = [
             {"name": i["name"]}
-            for i in api_info["api"].get("query_params", {}) if i in v
+            for i in api_info["api"].get("query_params", []) if i["name"] in v
         ]
 
         self._render_parameters = (not self._read_api)
+
+        self._resource_id_path = api_info.get("resource_id_path")
 
 
 def build_resource_api_config(api_info, all_models, properties,

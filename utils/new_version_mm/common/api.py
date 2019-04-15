@@ -134,7 +134,12 @@ def _list_api_info(api, all_models, custom_config):
         if i not in m:
             raise Exception("Unknown identity parameter(%s) for list api" % i)
 
+    p = custom_config.get("resource_id_path")
+    if not p:
+        raise Exception("Must set resource id path for list api")
+
     r.update({
+        "resource_id_path": p,
         "identity": identity,
         "crud": 'r'
     })
