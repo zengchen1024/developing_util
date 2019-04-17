@@ -68,6 +68,7 @@ def _generate_yaml(api_path, product_info, tag_info, output):
             "resource_desc": v.get("description", ""),
             "custom_configs": custom_configs,
             "cloud_full_name": product_info["cloud_full_name"],
+            "cloud_short_name": product_info["cloud_short_name"],
         }
 
         r.extend(build_resource_config(**argv))

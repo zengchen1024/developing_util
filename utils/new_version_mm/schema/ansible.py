@@ -1,7 +1,7 @@
+import os
 import pystache
-import re
 
-from common.utils import write_file, find_property
+from common.utils import write_file, find_property, read_yaml
 from common.preprocess import find_parameter
 
 
@@ -13,7 +13,7 @@ def build_ansible_yaml(info, all_models, output):
 
         examples = config.get("examples")
         if examples:
-            r.update(_generate_example_config(examples, v))
+            _generate_example_config(examples, v, output)
 
         c = config.get("overrides")
         if c:
@@ -154,38 +154,99 @@ def _process_lines(v, indent):
     ])
 
 
-def _generate_example_config(examples, info):
-    trn = ("%s_%s_%s_%s" % (
-        info["cloud_full_name"], info["service_type"],
-        info["resource_name"], info["version"])).lower()
+def _generate_example_config(examples, info, output):
+    module_name = ("%s_%s_%s" % (
+        info["cloud_short_name"], info["service_type"],
+        info["resource_name"])).lower()
 
-    m = re.compile(r"resource \"%s\" \"(.*)\" {" % trn)
+    output += "examples/ansible/"
+    if not os.path.isdir(output):
+        os.makedirs(output)
 
-    def _find_id(f):
-        tf = None
-        with open(f, "r") as o:
-            tf = o.readlines()
+    for f in examples:
+        data = _build_example_render_info(
+            info["config_dir"] + f, module_name, info["cloud_short_name"])
 
-        r = []
-        for i in tf:
-            v = m.match(i)
-            if v:
-                r.append(v)
+        s = pystache.Renderer().render_path(
+            "template/ansible_example.mustache", data)
 
-        if len(r) != 1:
-            raise Exception("Find zero or one more ansible resource(%s) "
-                            "in tf file(%s)" % (trn, f))
+        write_file(output + os.path.basename(f), [s])
 
-        return r[0].group(1)
 
-    result = [
-        {
-            "name": f.split(".")[0],
-            "resource_id": _find_id(info["config_dir"] + f)
-        }
-        for f in examples
-    ]
-    if result:
-        result[0]["is_basic"] = True
+def _build_example_render_info(f, module_name, cloud_short_name):
+    r = read_yaml(f)
+    tasks = r
+    if len(r) == 1 and isinstance(r[0], dict) and "tasks" in r[0]:
+        tasks = r[0].get("tasks")
 
-    return {"examples": result, "has_example": len(result) > 0}
+    if not tasks:
+        raise Exception("no tasks in the example file")
+
+    task = None
+    for i in tasks:
+        if module_name in i:
+            task = i
+            tasks.remove(i)
+            break
+    else:
+        raise Exception("can't find the task(%s)" % module_name)
+
+    v = {
+        "task_name": module_name,
+        "task_code": _build_module_params(task[module_name], 4)
+    }
+
+    if tasks:
+        d = []
+        for t in tasks:
+            module = ""
+            for k in t:
+                if k.startswith(cloud_short_name):
+                    module = k
+                    break
+            else:
+                continue
+
+            d.append({
+                "name": module,
+                "register": t.get("register"),
+                "code": _build_module_params(t[module], 6)
+            })
+
+        if d:
+            v["depends"] = d
+            v["has_depends"] = True
+
+    return v
+
+
+def _build_module_params(params, spaces, array_item=False):
+    r = []
+    for k, v in params.items():
+        if isinstance(v, dict):
+            r.append("%s%s:" % (' ' * spaces, k))
+            r.append(_build_module_params(v, spaces + 2))
+
+        elif isinstance(v, list):
+            r.append("%s%s:" % (' ' * spaces, k))
+
+            if isinstance(v[0], dict):
+                r.append(_build_module_params(v, spaces + 4), True)
+            else:
+                if isinstance(v[0], str):
+                    for i in v:
+                        r.append("%s- \"%s\"" % (' ' * spaces, str(i)))
+                else:
+                    for i in v:
+                        r.append("%s- %s" % (' ' * spaces, str(i)))
+
+        else:
+            if isinstance(v, str):
+                r.append("%s%s: \"%s\"" % (' ' * spaces, k, str(v)))
+            else:
+                r.append("%s%s: %s" % (' ' * spaces, k, str(v)))
+
+    if array_item:
+        r[0] = "%s- %s" % (' ' * (spaces - 2), r[0].strip())
+
+    return "\n".join(r)

@@ -1,0 +1,17 @@
+--- !ruby/object:Provider::Ansible::Example
+{{#has_depends}}
+dependencies:
+{{#depends}}
+  - !ruby/object:Provider::Ansible::Task
+    name: {{name}}
+    {{#register}}
+    register: {{register}}
+    {{/register}}
+    code: |
+{{{code}}}
+{{/depends}}
+{{/has_depends}}
+task: !ruby/object:Provider::Ansible::Task
+  name: {{task_name}}
+  code: |
+{{{task_code}}}
