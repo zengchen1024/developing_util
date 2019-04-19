@@ -280,14 +280,15 @@ class ApiList(ApiBase):
 
         self._identity = {k: i.get_item("field") for k, i in v.items()}
 
-        v = ["marker", "offset", "limit", "start"]
-        for i in self._identity:
-            v.append(i)
+        qp = [i["name"] for i in api_info["api"].get("query_params", [])]
 
-        self._query_params = [
-            {"name": i["name"]}
-            for i in api_info["api"].get("query_params", []) if i["name"] in v
-        ]
+        val = [i for i in self._identity if i in qp]
+        if len(val) != len(self._identity):
+            for i in ["marker", "offset", "limit", "start"]:
+                if i in qp:
+                    val.append(i)
+
+        self._query_params = [{"name": i} for i in val]
 
         self._render_parameters = (not self._read_api)
 
