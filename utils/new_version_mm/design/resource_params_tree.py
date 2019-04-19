@@ -80,8 +80,10 @@ def _path_parameter_resource_id(apis):
         if s:
             rid.append(path[s.start() + 1: s.end() - 1])
 
-    if len(rid) >= 2 and len(set(rid)) == 1:
+    if len(set(rid)) == 1:
         return rid.pop()
+
+    raise Exception("can't verify the path parameter of resource id")
 
 
 def _change_path_parameter(api_info, properties):
