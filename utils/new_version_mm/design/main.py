@@ -1,12 +1,16 @@
+import os
 import pystache
 import sys
 sys.path.append("..")
 
 from resource_params_tree import generate_resource_properties
-from common.utils import read_yaml
+from common.utils import normal_dir, read_yaml
 
 
 def run(api_path, cloud_name, tags, output):
+    if not os.path.isdir(output):
+        os.makedirs(output)
+    output = normal_dir(output)
 
     if api_path[-1] != "/":
         api_path += "/"

@@ -1,3 +1,4 @@
+import os
 import pystache
 import re
 
@@ -180,7 +181,7 @@ def _generate_example_config(examples, info):
 
     result = [
         {
-            "name": f.split(".")[0],
+            "name": os.path.basename(f).split(".")[0],
             "resource_id": _find_id(info["config_dir"] + f)
         }
         for f in examples
