@@ -70,27 +70,38 @@ def _parse_word(file_name):
             elif i == 1:
                 # row 1 is may column description
                 column_desc = {v.lower(): j for j, v in enumerate(cells)}
+
                 v = set(column_desc.keys()).intersection(
-                    set(["parameter", "mandatory", "type", "description"]))
+                    set([
+                        "name", "parameter", "mandatory",
+                        "type", "description"]))
                 if len(v) >= 3:
                     continue
+
                 column_desc = None
 
             items = cells
             if column_desc:
-                items = [
-                    cells[column_desc[p]] if p in column_desc else None
+                items = {
+                    p: cells[column_desc[p]] if p in column_desc else None
                     for p in [
-                        "parameter", "mandatory", "type", "description"
+                        "name", "parameter", "mandatory", "type", "description"
                     ]
-                ]
+                }
+            else:
+                items = {
+                    "name": cells[0],
+                    "mandatory": cells[1],
+                    "type": cells[2],
+                    "description": cells[3]
+                }
 
             try:
                 r = PropertyDef(
-                    items[0],
-                    items[1].lower() if items[1] else 'no',
-                    items[2],
-                    items[3].strip("\n"),
+                    items["parameter"] or items["name"],
+                    str(items["mandatory"] or 'no').lower(),
+                    items["type"],
+                    items["description"].strip("\n"),
                 )
                 t.append(r)
             except Exception as ex:
