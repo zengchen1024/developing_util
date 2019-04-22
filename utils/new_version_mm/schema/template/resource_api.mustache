@@ -8,6 +8,7 @@
         resource_id_path: '{{resource_id_path}}'
         {{/resource_id_path}}
         service_type: '{{service_type}}'
+        service_level: '{{service_level}}'
         has_response: {{has_response}}
         {{#msg_prefix}}
         msg_prefix: '{{msg_prefix}}'
@@ -52,6 +53,7 @@
           operation: !ruby/object:Api::Async::Operation
             name: '{{query_status.name}}'
             service_type: '{{query_status.service_type}}'
+            service_level: '{{query_status.service_level}}'
             path: '{{path}}'
             {{#has_path_parameter}}
             path_parameter:

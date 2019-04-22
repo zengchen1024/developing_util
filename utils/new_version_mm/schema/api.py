@@ -46,6 +46,7 @@ class ApiBase(object):
         self._parameters = None
         self._async = None
         self.service_type = ""
+        self.service_level = ""
         self._msg_prefix = ""
         self._msg_prefix_array_items = None
         self._render_parameters = True
@@ -118,6 +119,9 @@ class ApiBase(object):
                 if "service_type" not in qs:
                     qs["service_type"] = self.service_type
 
+                if "service_level" not in qs:
+                    qs["service_level"] = self.service_level
+
                 if "name" not in qs:
                     qs["name"] = self._name + "_async"
 
@@ -138,6 +142,7 @@ class ApiBase(object):
             "verb":      self._verb,
             "async":     self._async,
             "service_type": self.service_type,
+            "service_level": self.service_level,
             "msg_prefix": self._msg_prefix,
             "has_response": str(self._has_response).lower(),
         }
@@ -317,6 +322,8 @@ def build_resource_api_config(api_info, all_models, properties,
 
         # obj.init will use obj.service_type
         obj.service_type = service_type
+        obj.service_level = (
+            "domain" if service_type in ["identity"] else "project")
         obj.init(v, all_models, properties)
         r.extend(obj.render())
 
