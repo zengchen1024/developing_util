@@ -51,6 +51,7 @@ class ApiBase(object):
         self._msg_prefix_array_items = None
         self._render_parameters = True
         self._has_response = False
+        self._header_params = None
 
     def render(self):
         v = self._render_data()
@@ -75,6 +76,7 @@ class ApiBase(object):
         self._msg_prefix_array_items = api_info.get("msg_prefix_array_items")
         self._has_response = (
             api.get("response", {}).get("datatype") in all_models)
+        self._header_params = api_info.get("header_params")
 
         self._build_async_info(api_info)
 
@@ -122,6 +124,12 @@ class ApiBase(object):
                 if "service_level" not in qs:
                     qs["service_level"] = self.service_level
 
+                p = qs.get("header_params")
+                if p and isinstance(p, dict):
+                    r = [{"key": k, "value": v} for k, v in p.items()]
+                    ac["query_status"]["header_params"] = r
+                    ac["query_status"]["has_header_params"] = True
+
                 if "name" not in qs:
                     qs["name"] = self._name + "_async"
 
@@ -154,6 +162,11 @@ class ApiBase(object):
             r["msg_prefix_array_items"] = [
                 {"msg_prefix_array_item": i} for i in v]
 
+        if self._header_params and isinstance(self._header_params, dict):
+            r["has_header_params"] = True
+            r["header_params"] = [
+                {"key": k, "value": v} for k, v in self._header_params.items()
+            ]
         return r
 
     def _generate_parameter_config(self):

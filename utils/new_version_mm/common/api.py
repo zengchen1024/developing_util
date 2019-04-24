@@ -229,6 +229,10 @@ def build_resource_api_info(api_yaml, all_models, custom_configs):
         if p:
             r["path_parameter"] = p
 
+        h = v.get("header_params")
+        if h:
+            r["header_params"] = h
+
         _remove_project(r)
 
         k1 = t
