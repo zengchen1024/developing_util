@@ -43,7 +43,7 @@ def _generate_override(overrides, api_info, properties, all_models,
         if "to_request" in v or "to_request_method" in v:
             api_parameter_overrides[path] = v
 
-        elif "from_response" in v:
+        elif "from_response" in v or "from_response_method" in v:
             property_overrides[path] = v
 
         elif "async_status_check_func" in v:
@@ -69,16 +69,20 @@ def _generate_override(overrides, api_info, properties, all_models,
 
 
 def _generate_property_override(overrides, properties):
-    k = "from_response"
     pros = []
     for path, v in overrides.items():
 
         find_property(properties, path)
 
-        pros.append({
-            "prop_path": path,
-            k: _process_lines(v.get(k), 10)
-        })
+        m = {"prop_path": path}
+
+        if "from_response" in v:
+            m["from_response"] = _process_lines(v.get("from_response"), 10)
+
+        elif "from_response_method" in v:
+            m["from_response_method"] = v.get("from_response_method")
+
+        pros.append(m)
 
     return {
         "properties": pros,

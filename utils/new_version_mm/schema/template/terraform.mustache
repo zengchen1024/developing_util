@@ -35,6 +35,9 @@ overrides: !ruby/object:Provider::ResourceOverrides
         from_response: |
 {{{from_response}}}
         {{/from_response}}
+        {{#from_response_method}}
+        from_response_method: '{{from_response_method}}'
+        {{/from_response_method}}
   {{/properties}}
   {{/has_property_override}}
   {{#has_parameter_override}}
