@@ -21,6 +21,7 @@ overrides: !ruby/object:Provider::ResourceOverrides
       - !ruby/object:Provider::Terraform::Example
         name: {{name}}
         primary_resource_id: {{resource_id}}
+        description: "{{description}}"
         {{#is_basic}}
         is_basic: true
         {{/is_basic}}

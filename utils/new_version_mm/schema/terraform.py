@@ -185,8 +185,9 @@ def _generate_example_config(examples, info):
 
     result = [
         {
-            "name": os.path.basename(f).split(".")[0],
-            "resource_id": _find_id(info["config_dir"] + f)
+            "name": os.path.basename(f["path"]).split(".")[0],
+            "resource_id": _find_id(info["config_dir"] + f["path"]),
+            "description": f["description"]
         }
         for f in examples
     ]
