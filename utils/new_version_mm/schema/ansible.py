@@ -8,9 +8,11 @@ from common.preprocess import find_parameter
 def build_ansible_yaml(info, all_models, output):
     data = []
     for v in info:
-        r = {}
-        config = v.get("custom_configs")["ansible"]
+        config = v.get("custom_configs").get("ansible")
+        if not config:
+            continue
 
+        r = {}
         examples = config.get("examples")
         if examples:
             _generate_example_config(examples, v, output)
@@ -174,10 +176,12 @@ def _generate_example_config(examples, info, output):
 
 
 def _build_example_render_info(f, module_name, cloud_short_name):
+    tasks = None
     r = read_yaml(f)
-    tasks = r
     if len(r) == 1 and isinstance(r[0], dict) and "tasks" in r[0]:
         tasks = r[0].get("tasks")
+    else:
+        raise Exception("the format of example is not correct")
 
     if not tasks:
         raise Exception("no tasks in the example file")
@@ -192,8 +196,10 @@ def _build_example_render_info(f, module_name, cloud_short_name):
         raise Exception("can't find the task(%s)" % module_name)
 
     v = {
+        "example_description": r[0].get("name"),
         "task_name": module_name,
-        "task_code": _build_module_params(task[module_name], 4)
+        "task_code": _build_module_params(task[module_name], 4),
+        "task_description": task.get("name")
     }
 
     if tasks:
@@ -210,7 +216,8 @@ def _build_example_render_info(f, module_name, cloud_short_name):
             d.append({
                 "name": module,
                 "register": t.get("register"),
-                "code": _build_module_params(t[module], 6)
+                "description": t.get("name"),
+                "code": _build_module_params(t[module], 6),
             })
 
         if d:
@@ -221,17 +228,27 @@ def _build_example_render_info(f, module_name, cloud_short_name):
 
 
 def _build_module_params(params, spaces, array_item=False):
+    v = ["identity_endpoint", "user", "password",
+         "domain", "project", "log_file"]
+    for i in v:
+        params.pop(i, None)
+
+    return _gen_module_params(params, spaces, array_item)
+
+
+def _gen_module_params(params, spaces, array_item=False):
     r = []
     for k, v in params.items():
+
         if isinstance(v, dict):
             r.append("%s%s:" % (' ' * spaces, k))
-            r.append(_build_module_params(v, spaces + 2))
+            r.append(_gen_module_params(v, spaces + 2))
 
         elif isinstance(v, list):
             r.append("%s%s:" % (' ' * spaces, k))
 
             if isinstance(v[0], dict):
-                r.append(_build_module_params(v, spaces + 4), True)
+                r.append(_gen_module_params(v, spaces + 4), True)
             else:
                 if isinstance(v[0], str):
                     for i in v:

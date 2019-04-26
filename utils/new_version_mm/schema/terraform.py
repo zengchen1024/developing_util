@@ -9,9 +9,11 @@ from common.preprocess import find_parameter
 def build_terraform_yaml(info, all_models, output):
     data = []
     for v in info:
-        r = {}
-        config = v.get("custom_configs")["terraform"]
+        config = v.get("custom_configs").get("terraform")
+        if not config:
+            continue
 
+        r = {}
         examples = config.get("examples")
         if examples:
             r.update(_generate_example_config(examples, v))

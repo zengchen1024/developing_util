@@ -1,9 +1,13 @@
 --- !ruby/object:Provider::Ansible::Example
+description: {{example_description}}
 {{#has_depends}}
 dependencies:
 {{#depends}}
   - !ruby/object:Provider::Ansible::Task
     name: {{name}}
+    {{#description}}
+    description: {{description}}
+    {{/description}}
     {{#register}}
     register: {{register}}
     {{/register}}
@@ -13,5 +17,8 @@ dependencies:
 {{/has_depends}}
 task: !ruby/object:Provider::Ansible::Task
   name: {{task_name}}
+  {{#task_description}}
+  description: {{task_description}}
+  {{/task_description}}
   code: |
 {{{task_code}}}

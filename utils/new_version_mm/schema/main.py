@@ -86,18 +86,13 @@ def _generate_platform_yaml(info, all_models, output):
     r = {
         "ansible": {
             "f": build_ansible_yaml,
-            "data": []
+            "data": info
         },
         "terraform": {
             "f": build_terraform_yaml,
-            "data": []
+            "data": info
         }
     }
-
-    for v in info:
-        for k in r:
-            if v["custom_configs"].get(k):
-                r[k]["data"].append(v)
 
     for k, v in r.items():
         if v["data"]:
