@@ -156,7 +156,7 @@ def _generate_api_async_override(overrides, api_info):
 
 def _process_lines(v, indent):
     return "\n".join([
-        "%s%s" % (' ' * indent, row.strip().strip("\t"))
+        "%s%s" % (' ' * indent, row.strip("\t"))
         for row in v.split("\n")
     ])
 
