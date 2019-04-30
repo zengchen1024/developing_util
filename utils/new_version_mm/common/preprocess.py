@@ -69,11 +69,12 @@ def preprocess(struct, all_models, cmds):
         # support change_required at adjust stage
         # "change_required": _change_required,
 
-        # set_value, depends_on: only check the index of parameter
+        # set_value, depends_on, allow_empty: only check the index of parameter
         # it will be executed on schema stage, otherwise its value will be
         # lost, because the merge function doesn't care about them.
         "set_value": lambda i, p, v: i,
         "depends_on": lambda i, p, o: find_parameter(o, p, all_models),
+        "allow_empty": lambda i, p, v: i,
     }
 
     for i in cmds:

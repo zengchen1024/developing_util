@@ -81,7 +81,8 @@ class _Tree(object):
         if len(v) != 2:
             raise Exception("%smust input node and its value" % ex_msg)
 
-        self.find_param(v[0]).set_item("required", v[1] in ["true", "yes", 1])
+        self.find_param(v[0]).set_item("required",
+                                       v[1].lower() in ["true", "yes", 1])
 
     def delete(self, node):
         p = self.find_param(node)

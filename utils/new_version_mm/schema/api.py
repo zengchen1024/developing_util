@@ -99,6 +99,12 @@ class ApiBase(object):
             for k, v in dv.items():
                 find_property(self._parameters, k).set_item("default", v)
 
+        dv = cmds.get("allow_empty")
+        if isinstance(dv, dict):
+            for k, v in dv.items():
+                find_property(self._parameters, k).set_item(
+                    "send_empty_value", True)
+
         dv = cmds.get("depends_on")
         if isinstance(dv, dict):
             for k, v in dv.items():
