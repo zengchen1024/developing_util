@@ -183,6 +183,11 @@ def _merge_to(node2, node1, level):
         node1.set_item("required", True)
 
 
+def set_descs(tree, descs):
+    for k, v in descs.items():
+        tree.set_desc(k + " " + v)
+
+
 def adjust(adjust_cmds, properties, create_api_id):
     rn = _Tree(properties)
     fm = {
@@ -196,16 +201,17 @@ def adjust(adjust_cmds, properties, create_api_id):
         'change_required': rn.change_required,
     }
 
-    for cmds in adjust_cmds:
-        if isinstance(cmds, str):
-            cmds = [cmds]
+    for cmd in adjust_cmds:
+        if isinstance(cmd, dict):
+            if "set_desc" in cmd:
+                set_descs(rn, cmd["set_desc"])
+            continue
 
-        for cmd in cmds:
-            cmd = re.sub(r" +", " ", cmd)
-            i = cmd.find(" ")
-            f = fm.get(cmd[:i])
-            if not f:
-                raise Exception("Execute cmd(%s) failed, "
-                                "unknown cmd(%s)" % (cmd, cmd[:i]))
+        cmd = re.sub(r" +", " ", cmd)
+        i = cmd.find(" ")
+        f = fm.get(cmd[:i])
+        if not f:
+            raise Exception("Execute cmd(%s) failed, "
+                            "unknown cmd(%s)" % (cmd, cmd[:i]))
 
-            f(cmd[(i + 1):])
+        f(cmd[(i + 1):])

@@ -192,6 +192,7 @@ class Basic(object):
         raise Exception("Unsupported method of delete_child")
 
     def _desc_yaml(self, indent, k, v):
+        v = v.strip().strip("\n")
         if indent + len(k) + len(v) + 4 < 80:
             return _indent(indent, k, "\"%s\"" % v)
 
@@ -215,8 +216,9 @@ class Basic(object):
         if max_len < 20:
             max_len = 20
 
-        for p in v.split("\n"):
-            result.append(_paragraph_yaml(p, indent, max_len))
+        for p in re.split(r"^\n", v):
+            result.append(
+                _paragraph_yaml(p.replace("\n", " "), indent, max_len))
             result.append("\n")
 
         result.pop()
