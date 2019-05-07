@@ -3,6 +3,7 @@ import re
 from preprocess import find_parameter
 from preprocess import find_struct
 from preprocess import preprocess
+from utils import underscore
 
 
 def _get_array_path(index, body, all_models):
@@ -203,7 +204,8 @@ def build_resource_api_info(api_yaml, all_models, custom_configs):
     }
     result = {}
     for k, v in custom_configs.items():
-        api = api_yaml.get(k)
+        op_id = underscore(k)
+        api = api_yaml.get(op_id)
         if not api:
             raise Exception("Unknown opertion id:%s" % k)
 
@@ -217,7 +219,7 @@ def build_resource_api_info(api_yaml, all_models, custom_configs):
         else:
             r = _other_api_info(api, all_models, v)
 
-        r["op_id"] = k
+        r["op_id"] = op_id
         r["api"] = api
         r["verb"] = api["method"].upper()
         r["async"] = v.get("async")
@@ -237,7 +239,7 @@ def build_resource_api_info(api_yaml, all_models, custom_configs):
 
         k1 = t
         if not k1:
-            k1 = k
+            k1 = op_id
         result[k1] = r
 
     # avoid generating properties of both read and list
