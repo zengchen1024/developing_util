@@ -41,6 +41,9 @@ def _generate_override(overrides, api_info, properties, all_models,
     api_async_overrides = {}
 
     for path, v in overrides.items():
+        if not isinstance(v, dict):
+            raise Exception("the override(%s) is not in correct format" % path)
+
         if "to_request" in v or "to_request_method" in v:
             api_parameter_overrides[path] = v
 
@@ -105,7 +108,7 @@ def _generate_api_parameter_override(overrides, api_info, all_models):
 
         path = ".".join(pv[1:])
         if api.get("msg_prefix"):
-            path = path.lstrip(api.get("msg_prefix") + ".")
+            path = path.replace(api.get("msg_prefix") + ".", "", 1)
 
         find_parameter(path, api["body"], all_models)
 

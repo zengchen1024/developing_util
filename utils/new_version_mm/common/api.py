@@ -48,7 +48,7 @@ def _build_parameter(body, all_models, custom_config):
         for k, v in special_cmds.items():
             if v:
                 special_cmds[k] = {
-                    k1.lstrip(path + "."): v1 for k1, v1 in v.items()}
+                    k1.replace(path + ".", "", 1): v1 for k1, v1 in v.items()}
 
     return {
         "msg_prefix": path,

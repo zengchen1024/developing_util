@@ -110,7 +110,7 @@ def _generate_api_parameter_override(overrides, api_info, all_models):
 
         path = ".".join(pv[1:])
         if api.get("msg_prefix"):
-            path = path.lstrip(api.get("msg_prefix") + ".")
+            path = path.replace(api.get("msg_prefix") + ".", "", 1)
 
         find_parameter(path, api["body"], all_models)
 
