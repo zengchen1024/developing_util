@@ -6,7 +6,7 @@ from common import mm_param
 from common.parameter import build_resource_params
 
 
-def generate_resource_properties(api_yaml, all_models, tag, custom_configs):
+def generate_resource_properties(api_yaml, all_models, custom_configs):
 
     api_info = build_resource_api_info(api_yaml, all_models,
                                        custom_configs.get("apis", {}))
