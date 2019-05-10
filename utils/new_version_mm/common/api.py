@@ -126,23 +126,40 @@ def _list_api_info(api, all_models, custom_config):
     if r["msg_prefix"] in r["msg_prefix_array_items"]:
         r["msg_prefix_array_items"].remove(r["msg_prefix"])
 
+    # identity is only needed by Terraform
     identity = custom_config.get("identity")
-    if not identity:
-        raise Exception("Must set identity for list api")
-
-    m = [i["name"] for i in r["body"]]
-    for i in identity:
-        if i not in m:
-            raise Exception("Unknown identity parameter(%s) for list api" % i)
+    if identity:
+        m = [i["name"] for i in r["body"]]
+        for i in identity:
+            if i not in m:
+                raise Exception(
+                    "Unknown identity parameter(%s) for list api" % i)
 
     p = custom_config.get("resource_id_path")
     if not p:
         raise Exception("Must set resource id path for list api")
 
+    m = custom_config.get("query_param_map")
+    if m:
+        qp = [i["name"] for i in api.get("query_params", [])]
+        for k, v in m.items():
+            if k not in qp:
+                raise Exception("the parameter(%s) in query_param_map is not"
+                                "a valid query parameter" % k)
+
+            find_parameter(v, r["body"], all_models)
+
+            array_path = _get_array_path(v, r["body"], all_models)
+            if array_path:
+                raise Exception(
+                    "can not specify the property(%s) belonging "
+                    "to an array for the query parameter(%s)" % (v, k))
+
     r.update({
         "resource_id_path": p,
         "identity": identity,
-        "crud": 'r'
+        "crud": 'r',
+        "query_param_map": m
     })
     return r
 

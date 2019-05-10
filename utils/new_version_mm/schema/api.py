@@ -283,40 +283,89 @@ class ApiList(ApiBase):
 
         v.update({
             "api_type": "ApiList",
-            "identity": [
-                {"name": i, "ref": j} for i, j in self._identity.items()],
-            "has_identity":     True,
-            "query_params":     self._query_params,
-            "has_query_params": len(self._query_params) > 0,
             "resource_id_path": self._resource_id_path,
         })
+
+        if self._identity:
+            v["has_identity"] = True
+            v["identity"] = [
+                {"name": i, "ref": j} for i, j in self._identity.items()
+            ]
+
+        if self._query_params:
+            v["has_query_params"] = True
+            v["query_params"] = [
+                {"name": i, "ref": j} for i, j in self._query_params.items()
+            ]
 
         return v
 
     def init(self, api_info, all_models, properties):
         super(ApiList, self).init(api_info, all_models, properties)
 
-        v = {i: self._parameters[i] for i in api_info["identity"]}
         if self._read_api:
-            _build_field(self._read_api["op_id"], properties, v)
+            _build_field(
+                self._read_api["op_id"], properties, self._parameters)
+
         elif api_info.get("exclude_for_schema"):
             raise Exception("can't build field for identity of list api")
 
-        self._identity = {k: i.get_item("field") for k, i in v.items()}
+        identity = api_info.get("identity")
+        if identity:
+            self._identity = dict()
 
-        qp = [i["name"] for i in api_info["api"].get("query_params", [])]
+            for k in identity:
+                v = self._parameters[k].get_item("field")
+                if not v:
+                    raise Exception("list api identity(%s) has"
+                                    "no property to reference" % k)
 
-        val = [i for i in self._identity if i in qp]
-        if len(val) != len(self._identity):
-            for i in ["marker", "offset", "limit", "start"]:
-                if i in qp:
-                    val.append(i)
+                p = find_property(properties, v)
+                if not p.get_item("required"):
+                    raise Exception("the property(%s) referenced by list api "
+                                    "identity(%s) is not required" % (v, k))
 
-        self._query_params = [{"name": i} for i in val]
+                self._identity[k] = v
 
-        self._render_parameters = (not self._read_api)
+        self._init_query_params(api_info, properties)
+
+        # self._render_parameters = (not self._read_api)
 
         self._resource_id_path = api_info.get("resource_id_path")
+
+    def _init_query_params(self, api_info, properties):
+        val = {}
+        qp = [i["name"] for i in api_info["api"].get("query_params", [])]
+        for i in qp:
+            if i in ["marker", "offset", "limit", "start"]:
+                val[i] = ""
+
+            elif i in self._parameters:
+                f = self._parameters[i].get_item("field")
+                if f:
+                    p = find_property(properties, f)
+                    crud = p.get_item("crud")
+                    if crud.find("c") != -1 or crud.find("u") != -1:
+                        val[i] = f
+
+        m = api_info.get("query_param_map")
+        if m:
+            for k, v in m.items():
+                f = find_property(self._parameters, v).get_item("field")
+                if not f:
+                    raise Exception("there is no property to be referenced "
+                                    "by query parameter(%s)" % k)
+
+                p = find_property(properties, f)
+                crud = p.get_item("crud")
+                if crud.find("c") == -1 and crud.find("u") == -1:
+                    raise Exception("the property(%s) referenced by query "
+                                    "parameter(%s) is not an input "
+                                    "one" % (f, k))
+
+                val[k] = f
+
+        self._query_params = val
 
 
 def build_resource_api_config(api_info, all_models, properties,
