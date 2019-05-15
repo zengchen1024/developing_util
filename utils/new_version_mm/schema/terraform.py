@@ -2,7 +2,7 @@ import os
 import pystache
 import re
 
-from common.utils import write_file, find_property
+from common.utils import write_file, find_property, underscore
 from common.preprocess import find_parameter
 
 
@@ -103,7 +103,7 @@ def _generate_api_parameter_override(overrides, api_info, all_models):
     for path, v in overrides.items():
         pv = path.split(".")
 
-        api = req_apis.get(pv[0])
+        api = req_apis.get(underscore(pv[0]))
         if not api:
             raise Exception("the index(%s) is invalid, "
                             "unknown operation id" % path)
@@ -139,10 +139,11 @@ def _generate_api_async_override(overrides, api_info):
 
     pros = []
     for path, v in overrides.items():
-        if path not in req_apis:
+        path1 = underscore(path)
+        if path1 not in req_apis:
             raise Exception("the index(%s) is invalid, "
                             "unknown operation id" % path)
-        api = req_apis[path]
+        api = req_apis[path1]
         pros.append({
             "api": api.get("type", api["op_id"]),
             "custom_status_check_func": v.get("async_status_check_func")

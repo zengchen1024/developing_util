@@ -196,7 +196,9 @@ def _other_api_info(api, all_models, custom_config):
 
 def _remove_project(api_info):
     def _f(path):
-        s = re.search(r"{project_id}/|{project}/|{tenant}/|{tenant_id}/", path)
+        s = re.search(
+            r"{project_id}/|{project}/|{tenant}/|{tenant_id}/|{projectId}",
+            path)
         if s:
             return path[s.end():]
 
