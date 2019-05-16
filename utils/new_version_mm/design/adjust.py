@@ -42,7 +42,8 @@ class _Tree(object):
         if len(v) < 2:
             raise Exception("%smust input node and its new desc" % ex_msg)
 
-        self.find_param(v[0]).set_item("description", argv.lstrip(v[0] + " "))
+        self.find_param(v[0]).set_item(
+            "description", argv.replace(v[0] + " ", "", 1))
 
     def rename(self, argv):
         ex_msg = "Execute cmd(rename %s) failed, " % argv
