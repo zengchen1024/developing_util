@@ -105,11 +105,17 @@ class ApiBase(object):
                 find_property(self._parameters, k).set_item(
                     "send_empty_value", True)
 
+        dv = cmds.get("set_array_num")
+        if isinstance(dv, dict):
+            for k, v in dv.items():
+                find_property(self._parameters, k).set_item("array_num", v)
+
         dv = cmds.get("depends_on")
         if isinstance(dv, dict):
             for k, v in dv.items():
                 p = find_property(self._parameters, k)
-                p.set_item("field", p.parent.child(v).get_item("field"))
+                p1 = find_property(self._parameters, v)
+                p.set_item("field", p1.get_item("field"))
 
     def _build_async_info(self, api_info):
         ac = api_info.get("async")

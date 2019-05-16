@@ -115,7 +115,7 @@ def _get_version(api_info):
     if version:
         v = [i.strip().lower() for i in version.split(",")]
         v.sort()
-        return v[-1]
+        return v[-1].split(".")[0]
     return None
 
 

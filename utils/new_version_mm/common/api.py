@@ -26,7 +26,12 @@ def _build_parameter(body, all_models, custom_config):
     if len(body) == 0:
         raise Exception("Can't parse message prefix, the struct is empty")
 
-    special_cmds = {"set_value": {}, "depends_on": {}, "allow_empty": {}}
+    special_cmds = {
+        "set_value": {},
+        "depends_on": {},
+        "allow_empty": {},
+        "set_array_num": {}
+    }
     cmds = custom_config.get("parameter_preprocess", [])
     if cmds and isinstance(cmds, list):
         preprocess(body, all_models, cmds)

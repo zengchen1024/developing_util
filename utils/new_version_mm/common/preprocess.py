@@ -73,6 +73,7 @@ def preprocess(struct, all_models, cmds):
         # it will be executed on schema stage, otherwise its value will be
         # lost, because the merge function doesn't care about them.
         "set_value": lambda i, p, v: i,
+        "set_array_num": lambda i, p, v: i,
         "depends_on": lambda i, p, o: find_parameter(o, p, all_models),
         "allow_empty": lambda i, p, v: i,
     }

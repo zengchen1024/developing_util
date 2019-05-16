@@ -76,6 +76,11 @@ class Basic(object):
                 "value": None,
                 "yaml": lambda n, k, v: _indent(n, k, str(v).lower()),
             },
+
+            "array_num": {
+                "value": None,
+                "yaml": lambda n, k, v: _indent(n, k, v),
+            },
         }
 
     @property
