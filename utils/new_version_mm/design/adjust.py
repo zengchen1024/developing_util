@@ -2,6 +2,7 @@ import functools
 import re
 
 from common import mm_param
+from common.utils import underscore
 
 
 class _Tree(object):
@@ -189,6 +190,24 @@ def set_descs(tree, descs):
         tree.set_desc(k + " " + v)
 
 
+def add_node(tree, node_info):
+    if node_info["datatype"] in ("str", "int", "bool"):
+        node_info.setdefault("mandatory", None)
+
+        r = mm_param.build([node_info], None)
+        node = r[node_info["name"]]
+
+        p = node_info["path"]
+        i = p.find(".")
+        node.path[underscore(p[:i])] = p[i+1:]
+
+        tree.add_child(node)
+
+    else:
+        raise Exception("unsupported datatype(%s) for "
+                        "add_node" % node_info["datatype"])
+
+
 def adjust(adjust_cmds, properties, create_api_id):
     rn = _Tree(properties)
     fm = {
@@ -206,6 +225,13 @@ def adjust(adjust_cmds, properties, create_api_id):
         if isinstance(cmd, dict):
             if "set_desc" in cmd:
                 set_descs(rn, cmd["set_desc"])
+
+            elif "add_node" in cmd:
+                add_node(rn, cmd["add_node"])
+
+            else:
+                raise Exception("unknown adjust cmd(%s)" % str(cmd))
+
             continue
 
         cmd = re.sub(r" +", " ", cmd)
