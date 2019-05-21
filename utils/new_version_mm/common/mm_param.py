@@ -19,6 +19,7 @@ class Basic(object):
         self._mm_type = ""
         self._parent = None
         self._path = dict()
+        self._alias = ""
 
         self._items = {
             "name": {
@@ -96,6 +97,14 @@ class Basic(object):
         return self._path
 
     @property
+    def alias(self):
+        return self._alias
+
+    @alias.setter
+    def alias(self, value):
+        self._alias = value
+
+    @property
     def real_type(self):
         s = self._mm_type
         return s[s.find(":") + 1:]
@@ -111,6 +120,9 @@ class Basic(object):
 
         if param["mandatory"]:
             self.set_item("required", True)
+
+        if "alias" in param:
+            self._alias = param["alias"]
 
         return self
 
@@ -138,8 +150,9 @@ class Basic(object):
         if self.get_item("exclude"):
             return
 
+        name = self.alias if self.alias else self.get_item("name")
         r = [
-            "%s%s:\n" % (' ' * indent, self.get_item("name")),
+            "%s%s:\n" % (' ' * indent, name),
             "%sdatatype: %s\n" % (' ' * (indent + 2),
                                   self._mm_type.split(":")[-1])
         ]
@@ -359,18 +372,18 @@ class MMNestedObject(Basic):
             "param_yaml": self._properties_param_yaml
         }
 
-    def add_child(self, child):
+    def add_child(self, key, child):
         v = self.get_item("properties")
         if v is None:
             v = {}
             self.set_item("properties", v)
 
-        v[child.get_item("name")] = child
+        v[key] = child
         child.parent = self
 
-    def delete_child(self, child):
+    def delete_child(self, key):
         v = self.get_item("properties")
-        v.pop(child.get_item("name"))
+        v.pop(key)
 
     def init(self, param, parent, all_structs, build):
         super(MMNestedObject, self).init(param, parent)
@@ -473,18 +486,18 @@ class MMArray(Basic):
             "yaml": lambda n, k, v: _indent(n, k, str(v)),
         }
 
-    def add_child(self, child):
+    def add_child(self, key, child):
         v = self.get_item("item_type")
         if v is None:
             v = {}
             self.set_item("item_type", v)
 
-        v[child.get_item("name")] = child
+        v[key] = child
         child.parent = self
 
-    def delete_child(self, child):
+    def delete_child(self, key):
         v = self.get_item("item_type")
-        v.pop(child.get_item("name"))
+        v.pop(key)
 
     def init(self, param, parent, all_structs, build):
         super(MMArray, self).init(param, parent)

@@ -58,6 +58,10 @@ def _change_type(index, parent, new_type):
     parent[index]["datatype"] = new_type
 
 
+def _set_alias(index, parent, alias):
+    parent[index]["alias"] = alias
+
+
 def _change_required(index, parent, value):
     parent[index]["mandatory"] = value in ["true", "yes", 1]
 
@@ -76,6 +80,7 @@ def preprocess(struct, all_models, cmds):
         "set_array_num": lambda i, p, v: i,
         "depends_on": lambda i, p, o: find_parameter(o, p, all_models),
         "allow_empty": lambda i, p, v: i,
+        "set_alias": _set_alias
     }
 
     for i in cmds:

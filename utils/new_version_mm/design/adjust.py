@@ -5,6 +5,10 @@ from common import mm_param
 from common.utils import underscore
 
 
+def _node_index(n):
+    return n.alias if n.alias else n.get_item("name")
+
+
 class _Tree(object):
     def __init__(self, properties):
         self._p = properties
@@ -22,12 +26,12 @@ class _Tree(object):
 
         raise Exception("parent:root, no child with key(%s)" % key)
 
-    def add_child(self, child):
-        self._p[child.get_item("name")] = child
+    def add_child(self, key, child):
+        self._p[key] = child
         child.parent = self
 
-    def delete_child(self, child):
-        self._p.pop(child.get_item("name"))
+    def delete_child(self, key):
+        self._p.pop(key)
 
     def find_param(self, keys):
         obj = self
@@ -61,11 +65,12 @@ class _Tree(object):
             raise Exception("%s%s" % (ex_msg, ex))
 
         # delete old index, because the parent stores the child in map
-        parent.delete_child(p)
+        parent.delete_child(_node_index(p))
 
         # rename and add node with new index
         p.set_item("name", v[1])
-        parent.add_child(p)
+        p.alias = ""
+        parent.add_child(_node_index(p), p)
 
     def default_value(self, argv):
         ex_msg = "Execute cmd(default_value %s) failed, " % argv
@@ -88,7 +93,7 @@ class _Tree(object):
 
     def delete(self, node):
         p = self.find_param(node)
-        p.parent.delete_child(p)
+        p.parent.delete_child(_node_index(p))
 
     def move(self, argv):
         ex_msg = "Execute cmd(move %s) failed, " % argv
@@ -108,8 +113,8 @@ class _Tree(object):
         # must run find, delete then add. if add before delete, then there is
         # no effect, because it will be delete from new parent.
         p = self.find_param(v[0])
-        p.parent.delete_child(p)
-        parent.add_child(p)
+        p.parent.delete_child(_node_index(p))
+        parent.add_child(_node_index(p), p)
 
     def merge_to(self, argv):
         """ merge node1 to node2 """
@@ -133,7 +138,7 @@ class _Tree(object):
         except Exception:
             return
 
-        n = "root_node" if parent == self else parent.get_item("name")
+        n = "root_node" if parent == self else _node_index(parent)
 
         raise Exception("the name(%s) is exist in parameter(%s)" % (
                             node_name, n))
@@ -148,7 +153,7 @@ class _Tree(object):
 
         parent = self
         try:
-            self._raise_if_duplicate_name(parent, v[1])
+            self._raise_if_duplicate_name(parent, v[0])
         except Exception as ex:
             raise Exception("%s%s" % (ex_msg, ex))
 
@@ -166,7 +171,7 @@ class _Tree(object):
         p = mm_param.build([p], None, lambda n: n["name"], parent)[name]
         p.path[create_api_id] = name
 
-        parent.add_child(p)
+        parent.add_child(_node_index(p), p)
 
 
 def _merge_to(node2, node1, level):
@@ -201,7 +206,7 @@ def add_node(tree, node_info):
         i = p.find(".")
         node.path[underscore(p[:i])] = p[i+1:]
 
-        tree.add_child(node)
+        tree.add_child(_node_index(node), node)
 
     else:
         raise Exception("unsupported datatype(%s) for "
