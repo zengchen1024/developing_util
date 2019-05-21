@@ -163,7 +163,7 @@ class _Tree(object):
             "description": argv[argv.find(dt) + len(dt) + 1:],
             "mandatory": True
         }
-        p = mm_param.build([p], None, parent)[name]
+        p = mm_param.build([p], None, lambda n: n["name"], parent)[name]
         p.path[create_api_id] = name
 
         parent.add_child(p)
@@ -194,7 +194,7 @@ def add_node(tree, node_info):
     if node_info["datatype"] in ("str", "int", "bool"):
         node_info.setdefault("mandatory", None)
 
-        r = mm_param.build([node_info], None)
+        r = mm_param.build([node_info], None, lambda n: n["name"])
         node = r[node_info["name"]]
 
         p = node_info["path"]

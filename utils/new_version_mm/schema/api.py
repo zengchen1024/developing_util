@@ -82,7 +82,8 @@ class ApiBase(object):
 
         body = api_info.get("body")
         if body and isinstance(body, list):
-            self._parameters = mm_param.build(body, all_models)
+            self._parameters = mm_param.build(
+                body, all_models, lambda n: n["name"])
 
             if not api_info.get("exclude_for_schema"):
                 _build_field(api_info["op_id"], properties, self._parameters)

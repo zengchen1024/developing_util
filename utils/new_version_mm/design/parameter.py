@@ -1,4 +1,4 @@
-import mm_param
+from common import mm_param
 
 
 def build_resource_params(api_info, all_models):
@@ -33,9 +33,12 @@ def _build_params(api_info, all_models):
         else:
             n.path[op] = "%s.%s" % (n.parent.path[op], n.get_item("name"))
 
+    def _index_method(p):
+        return p["alias"] if "alias" in p else p["name"]
+
     body = api_info.get("body")
     if body:
-        r = mm_param.build(body, all_models)
+        r = mm_param.build(body, all_models, _index_method)
         for v in r.values():
             v.traverse(_init_node)
 

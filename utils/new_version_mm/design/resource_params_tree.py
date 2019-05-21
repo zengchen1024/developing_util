@@ -3,7 +3,7 @@ import re
 from adjust import adjust
 from common.api import build_resource_api_info
 from common import mm_param
-from common.parameter import build_resource_params
+from parameter import build_resource_params
 
 
 def generate_resource_properties(api_yaml, all_models, custom_configs):

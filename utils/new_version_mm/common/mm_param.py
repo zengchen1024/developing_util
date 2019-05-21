@@ -372,11 +372,11 @@ class MMNestedObject(Basic):
         v = self.get_item("properties")
         v.pop(child.get_item("name"))
 
-    def init(self, param, parent, all_structs):
+    def init(self, param, parent, all_structs, build):
         super(MMNestedObject, self).init(param, parent)
 
         self.set_item("properties",
-                      build(all_structs[param["datatype"]], all_structs, self))
+                      build(all_structs[param["datatype"]], self))
 
         return self
 
@@ -486,7 +486,7 @@ class MMArray(Basic):
         v = self.get_item("item_type")
         v.pop(child.get_item("name"))
 
-    def init(self, param, parent, all_structs):
+    def init(self, param, parent, all_structs, build):
         super(MMArray, self).init(param, parent)
 
         supported_sub_datatype = {
@@ -501,7 +501,7 @@ class MMArray(Basic):
 
         elif sub_datatype in all_structs:
             self.set_item("item_type",
-                          build(all_structs[sub_datatype], all_structs, self))
+                          build(all_structs[sub_datatype], self))
 
         else:
             raise Exception("Convert to MMArray failed, unknown parameter "
@@ -604,37 +604,41 @@ class MMArray(Basic):
         callback(self, leaf=isinstance(self_item_type, str))
 
 
-_mm_type_map = {
-    "str": MMString,
-    "bool": MMBoolean,
-    "int": MMInteger,
-    "time": MMTime,
-    "enum": MMEnum,
-    "map": MMNameValues,
-    "datetime": MMTime,
-    "date": MMTime,
-}
+def build(struct, all_structs, index_method, parent=None):
 
+    _mm_type_map = {
+        "str": MMString,
+        "bool": MMBoolean,
+        "int": MMInteger,
+        "time": MMTime,
+        "enum": MMEnum,
+        "map": MMNameValues,
+        "datetime": MMTime,
+        "date": MMTime,
+    }
 
-def build(struct, all_structs, parent=None):
-    r = {}
-    for p in struct:
-        name = p["name"]
-        datatype = p["datatype"]
+    def _build(struct1, parent):
+        r = {}
+        for p in struct1:
+            i = index_method(p)
+            datatype = p["datatype"]
 
-        if datatype in _mm_type_map:
-            r[name] = _mm_type_map[datatype]().init(p, parent)
+            if datatype in _mm_type_map:
+                r[i] = _mm_type_map[datatype]().init(p, parent)
 
-        elif datatype in all_structs:
-            r[name] = MMNestedObject().init(p, parent, all_structs)
+            elif datatype in all_structs:
+                r[i] = MMNestedObject().init(p, parent, all_structs, _build)
 
-        elif datatype.find("list") == 0:
-            r[name] = MMArray().init(p, parent, all_structs)
+            elif datatype.find("list") == 0:
+                r[i] = MMArray().init(p, parent, all_structs, _build)
 
-        elif datatype.find("dict") == 0:
-            r[name] = MMNameValues().init(p, parent)
+            elif datatype.find("dict") == 0:
+                r[i] = MMNameValues().init(p, parent)
 
-        else:
-            raise Exception("Convert to mm object failed, unknown parameter "
-                            "type(%s) for parameter(%s)" % (datatype, name))
-    return r
+            else:
+                raise Exception("Convert to mm object failed, unknown "
+                                "parameter type(%s) for "
+                                "parameter(%s)" % (datatype, p["name"]))
+        return r
+
+    return _build(struct, parent)
