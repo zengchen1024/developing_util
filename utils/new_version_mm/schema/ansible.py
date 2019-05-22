@@ -161,9 +161,9 @@ def _process_lines(v, indent):
 
 
 def _generate_example_config(examples, info, output):
-    module_name = ("%s_%s_%s" % (
+    module_name = underscore("%s_%s_%s" % (
         info["cloud_short_name"], info["service_type"],
-        info["resource_name"])).lower()
+        info["resource_name"]))
 
     output += "examples/ansible/"
     if not os.path.isdir(output):
@@ -256,10 +256,10 @@ def _gen_module_params(params, spaces, array_item=False):
             else:
                 if isinstance(v[0], str):
                     for i in v:
-                        r.append("%s- \"%s\"" % (' ' * spaces, str(i)))
+                        r.append("%s- \"%s\"" % (' ' * (spaces + 2), str(i)))
                 else:
                     for i in v:
-                        r.append("%s- %s" % (' ' * spaces, str(i)))
+                        r.append("%s- %s" % (' ' * (spaces + 2), str(i)))
 
         else:
             if isinstance(v, str):

@@ -60,7 +60,7 @@ class Basic(object):
 
             "default": {
                 "value": None,
-                "yaml": lambda n, k, v: _indent(n, k, "\'%s\'" % v),
+                "yaml": lambda n, k, v: _indent(n, k, "%s" % v),
             },
 
             "is_id": {
