@@ -20,6 +20,7 @@ class Basic(object):
         self._parent = None
         self._path = dict()
         self._alias = ""
+        self._depth = 0
 
         self._items = {
             "name": {
@@ -108,6 +109,14 @@ class Basic(object):
     def real_type(self):
         s = self._mm_type
         return s[s.find(":") + 1:]
+
+    @property
+    def depth(self):
+        return self._depth
+
+    @depth.setter
+    def depth(self, v):
+        self._depth = v
 
     def init(self, param, parent):
         self._parent = parent

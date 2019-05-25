@@ -78,7 +78,7 @@ def preprocess(struct, all_models, cmds):
         # lost, because the merge function doesn't care about them.
         "set_value": lambda i, p, v: i,
         "set_array_num": lambda i, p, v: i,
-        "depends_on": lambda i, p, o: find_parameter(o, p, all_models),
+        "depends_on": lambda i, p, o: find_parameter(o, struct, all_models),
         "allow_empty": lambda i, p, v: i,
         "set_alias": _set_alias
     }

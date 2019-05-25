@@ -38,6 +38,18 @@ def _build_field(op_id, properties, parameters):
         o.traverse(_set_field)
 
 
+def _set_desc(params):
+
+    def f(n):
+        k = "description"
+        if not n.get_item(k):
+            n.set_item(k, "abc")
+
+    for _, v in params.items():
+        v.parent = None
+        v.traverse(f)
+
+
 class ApiBase(object):
     def __init__(self, name):
         self._name = name
@@ -90,6 +102,8 @@ class ApiBase(object):
 
             self._exe_special_cmds(api_info)
 
+            _set_desc(self._parameters)
+
     def _exe_special_cmds(self, api_info):
         cmds = api_info.get("special_cmds", {})
         if not cmds:
@@ -112,8 +126,13 @@ class ApiBase(object):
                 find_property(self._parameters, k).set_item("array_num", v)
 
         dv = cmds.get("depends_on")
-        if isinstance(dv, dict):
+        if dv and isinstance(dv, dict):
+            msg_prefix = api_info.get("msg_prefix", "")
+
             for k, v in dv.items():
+                if msg_prefix and isinstance(msg_prefix, str):
+                    v = v.replace(msg_prefix + ".", "", 1)
+
                 p = find_property(self._parameters, k)
                 p1 = find_property(self._parameters, v)
                 p.set_item("field", p1.get_item("field"))

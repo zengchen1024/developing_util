@@ -182,7 +182,8 @@ def _generate_example_config(examples, info):
 
         if len(r) != 1:
             raise Exception("Find zero or one more terraform resource(%s) "
-                            "in tf file(%s)" % (trn, f))
+                            "in tf file(%s), or the format is not "
+                            "correct" % (trn, f))
 
         return r[0].group(1)
 

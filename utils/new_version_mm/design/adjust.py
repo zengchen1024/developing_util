@@ -214,6 +214,9 @@ def add_node(tree, node_info):
 
 
 def adjust(adjust_cmds, properties, create_api_id):
+    if not adjust_cmds:
+        return
+
     rn = _Tree(properties)
     fm = {
         'rename': rn.rename,
