@@ -60,3 +60,11 @@ def underscore(v):
     v = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", v)
     v = re.sub(r"([a-z\d])([A-Z])", r"\1_\2", v)
     return v.replace('-', '_').replace('.', '_').lower()
+
+
+def process_override_codes(v, indent):
+    r = []
+    for row in v.split("\n"):
+        row = row.strip("\t")
+        r.append("%s%s" % (' ' * indent, row) if len(row) > 0 else row)
+    return "\n".join(r)

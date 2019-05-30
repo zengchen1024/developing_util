@@ -1,7 +1,8 @@
 import os
 import pystache
 
-from common.utils import write_file, find_property, read_yaml, underscore
+from common.utils import (find_property, process_override_codes,
+                          read_yaml, underscore, write_file)
 from common.preprocess import find_parameter
 
 
@@ -81,7 +82,7 @@ def _generate_property_override(overrides, properties):
 
         pros.append({
             "prop_path": path,
-            k: _process_lines(v.get(k), 10)
+            k: process_override_codes(v.get(k), 10)
         })
 
     return {
@@ -94,7 +95,7 @@ def _generate_api_parameter_override(overrides, api_info, all_models):
     req_apis = {
         v["op_id"]: v
         for v in api_info.values()
-        if v["crud"].find("r") == -1
+        if v["crud"].find("r") == -1 or v.get("type", "") == "list"
     }
 
     params = []
@@ -115,7 +116,7 @@ def _generate_api_parameter_override(overrides, api_info, all_models):
         m = {"prop_path": "%s.%s" % (api.get("type", api["op_id"]), path)}
 
         if "to_request" in v:
-            m["to_request"] = _process_lines(v.get("to_request"), 10)
+            m["to_request"] = process_override_codes(v.get("to_request"), 10)
 
         elif "to_request_method" in v:
             m["to_request_method"] = v.get("to_request_method")
@@ -151,13 +152,6 @@ def _generate_api_async_override(overrides, api_info):
         "api_asyncs": pros,
         "has_async_override": True
     }
-
-
-def _process_lines(v, indent):
-    return "\n".join([
-        "%s%s" % (' ' * indent, row.strip("\t"))
-        for row in v.split("\n")
-    ])
 
 
 def _generate_example_config(examples, info, output):

@@ -40,7 +40,7 @@ def _build_parameter(body, all_models, custom_config):
             for j in special_cmds:
                 if i.find(j) != -1:
                     v = re.sub(r" +", " ", i).split(" ")
-                    special_cmds[j][v[1]] = v[2]
+                    special_cmds[j][v[1]] = v[2] if len(v) > 2 else None
 
     array_path = []
     path = custom_config.get("path_to_body")

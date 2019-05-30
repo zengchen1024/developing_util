@@ -2,7 +2,8 @@ import os
 import pystache
 import re
 
-from common.utils import write_file, find_property, underscore
+from common.utils import (find_property, process_override_codes,
+                          underscore, write_file)
 from common.preprocess import find_parameter
 
 
@@ -79,7 +80,8 @@ def _generate_property_override(overrides, properties):
         m = {"prop_path": path}
 
         if "from_response" in v:
-            m["from_response"] = _process_lines(v.get("from_response"), 10)
+            m["from_response"] = process_override_codes(
+                v.get("from_response"), 10)
 
         elif "from_response_method" in v:
             m["from_response_method"] = v.get("from_response_method")
@@ -117,7 +119,7 @@ def _generate_api_parameter_override(overrides, api_info, all_models):
         m = {"prop_path": "%s.%s" % (api.get("type", api["op_id"]), path)}
 
         if "to_request" in v:
-            m["to_request"] = _process_lines(v.get("to_request"), 10)
+            m["to_request"] = process_override_codes(v.get("to_request"), 10)
 
         elif "to_request_method" in v:
             m["to_request_method"] = v.get("to_request_method")
@@ -153,13 +155,6 @@ def _generate_api_async_override(overrides, api_info):
         "api_asyncs": pros,
         "has_async_override": True
     }
-
-
-def _process_lines(v, indent):
-    return "\n".join([
-        "%s%s" % (' ' * indent, row.strip("\t"))
-        for row in v.split("\n")
-    ])
 
 
 def _generate_example_config(examples, info):
