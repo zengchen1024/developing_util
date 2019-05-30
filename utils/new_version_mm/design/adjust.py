@@ -2,6 +2,7 @@ import functools
 import re
 
 from common import mm_param
+from common.preprocess import find_parameter
 from common.utils import underscore
 
 
@@ -195,7 +196,7 @@ def set_descs(tree, descs):
         tree.set_desc(k + " " + v)
 
 
-def add_node(tree, node_info):
+def add_node(tree, node_info, api_info, all_models):
     if node_info["datatype"] in ("str", "int", "bool"):
         node_info.setdefault("mandatory", None)
 
@@ -204,7 +205,28 @@ def add_node(tree, node_info):
 
         for p in node_info["path"]:
             i = p.find(".")
-            node.path[underscore(p[:i])] = p[i+1:]
+            op_id = underscore(p[:i])
+            index = p[i+1:]
+
+            body = None
+            for _, v in api_info.items():
+                if v["op_id"] == op_id:
+                    body = v["body"]
+                    if v.get("msg_prefix"):
+                        index = index.replace(v.get("msg_prefix") + ".", "")
+                    break
+            else:
+                raise Exception("add node failed, the unknown operation "
+                                "id:%s" % p[:i])
+
+            try:
+                find_parameter(index, body, all_models)
+            except Exception as ex:
+                raise Exception("add node failed, can't find parameter(%s) "
+                                "referenced by property(%s), err:%s" % (
+                                    index, node_info["name"], str(ex)))
+
+            node.path[op_id] = index
 
         tree.add_child(_node_index(node), node)
 
@@ -213,7 +235,7 @@ def add_node(tree, node_info):
                         "add_node" % node_info["datatype"])
 
 
-def adjust(adjust_cmds, properties, create_api_id):
+def adjust(adjust_cmds, properties, create_api_id, api_info, all_models):
     if not adjust_cmds:
         return
 
@@ -235,7 +257,7 @@ def adjust(adjust_cmds, properties, create_api_id):
                 set_descs(rn, cmd["set_desc"])
 
             elif "add_node" in cmd:
-                add_node(rn, cmd["add_node"])
+                add_node(rn, cmd["add_node"], api_info, all_models)
 
             else:
                 raise Exception("unknown adjust cmd(%s)" % str(cmd))
