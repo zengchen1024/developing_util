@@ -202,9 +202,9 @@ def add_node(tree, node_info):
         r = mm_param.build([node_info], None, lambda n: n["name"])
         node = r[node_info["name"]]
 
-        p = node_info["path"]
-        i = p.find(".")
-        node.path[underscore(p[:i])] = p[i+1:]
+        for p in node_info["path"]:
+            i = p.find(".")
+            node.path[underscore(p[:i])] = p[i+1:]
 
         tree.add_child(_node_index(node), node)
 
