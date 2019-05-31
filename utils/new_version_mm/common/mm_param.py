@@ -243,7 +243,7 @@ class Basic(object):
         if max_len < 20:
             max_len = 20
 
-        for p in re.split(r"^\n", v):
+        for p in re.split(r"^\n|\n\n", v):
             result.append(
                 _paragraph_yaml(p.replace("\n", " "), indent, max_len))
             result.append("\n")
