@@ -251,13 +251,10 @@ def build_resource_api_info(api_yaml, all_models, custom_configs):
         if v.get("exclude_for_schema"):
             r["exclude_for_schema"] = True
 
-        p = v.get("path_parameter")
-        if p:
-            r["path_parameter"] = p
-
-        h = v.get("header_params")
-        if h:
-            r["header_params"] = h
+        for k in ["path_parameter", "header_params", "service_type"]:
+            v1 = v.get(k)
+            if v1:
+                r[k] = v1
 
         _remove_project(r)
 

@@ -415,9 +415,11 @@ def build_resource_api_config(api_info, all_models, properties,
             obj = ApiBase(t)
 
         # obj.init will use obj.service_type
-        obj.service_type = service_type
-        obj.service_level = (
-            "domain" if service_type in ["identity"] else "project")
+        s = v.get("service_type")
+        if not s:
+            s = service_type
+        obj.service_type = s
+        obj.service_level = ("domain" if s in ["identity"] else "project")
         obj.init(v, all_models, properties)
         r.extend(obj.render())
 
