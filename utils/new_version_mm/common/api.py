@@ -164,7 +164,10 @@ def _list_api_info(api, all_models, custom_config):
         "resource_id_path": p,
         "identity": identity,
         "crud": 'r',
-        "query_param_map": m
+        "query_param_map": m,
+        "pagination_offset": custom_config.get("pagination_offset"),
+        "pagination_start": custom_config.get("pagination_start"),
+        "pagination_marker": custom_config.get("pagination_marker"),
     })
     return r
 

@@ -360,11 +360,15 @@ class ApiList(ApiBase):
         self._resource_id_path = api_info.get("resource_id_path")
 
     def _init_query_params(self, api_info, properties):
-        val = {}
+        pp = dict()
+        val = dict()
         qp = [i["name"] for i in api_info["api"].get("query_params", [])]
         for i in qp:
-            if i in ["marker", "offset", "limit", "start"]:
+            if i == "limit":
                 val[i] = ""
+
+            elif i in ["marker", "offset", "start"]:
+                pp[i] = i
 
             elif i in self._parameters:
                 f = self._parameters[i].get_item("field")
@@ -391,7 +395,32 @@ class ApiList(ApiBase):
 
                 val[k] = f
 
+        v = self._get_pagination_parameter(api_info, pp)
+        if v:
+            val.update(v)
+
         self._query_params = val
+
+    def _get_pagination_parameter(self, api_info, current_params):
+        pp1 = dict()
+        for i in ["marker", "offset", "start"]:
+            v = api_info.get("pagination_" + i)
+            if v:
+                pp1[v] = i
+
+        if len(pp1) > 1:
+            raise Exception("specify just only one pagination parameter")
+
+        if pp1:
+            return pp1
+
+        if len(current_params) > 1:
+            raise Exception("must specify a pagination parameter for list api")
+
+        elif current_params:
+            return current_params
+
+        return None
 
 
 def build_resource_api_config(api_info, all_models, properties,
