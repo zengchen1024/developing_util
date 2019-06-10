@@ -169,9 +169,11 @@ def _parse_datatype(datatype):
             "$ref": "#/definitions/%s" % datatype[m.end():]
         }
 
-    m = re.match(r"^map:", dt)
+    m = re.findall(r"^map:(.*)|^map<string,(.*)>", dt)
     if m:
-        t = datatype[m.end():]
+        t = m[0][0].strip()
+        if not t:
+            t = m[0][1].strip()
         ap = None
         if t in type_map:
             ap = {"type": type_map[t]}
