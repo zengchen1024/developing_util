@@ -60,6 +60,17 @@ overrides: !ruby/object:Provider::ResourceOverrides
         {{/custom_status_check_func}}
   {{/api_asyncs}}
   {{/has_async_override}}
+  {{#has_multi_invoke_override}}
+
+    api_multi_invokes:
+  {{#api_multi_invokes}}
+      {{api}}: !ruby/object:Provider::ApiMultiInvokeOverride
+        {{#parameter_pre_process}}
+        parameter_pre_process: |
+{{{parameter_pre_process}}}
+        {{/parameter_pre_process}}
+  {{/api_multi_invokes}}
+  {{/has_multi_invoke_override}}
 {{/resources}}
 # This is where custom code would be defined eventually.
 examples: !ruby/object:Api::Resource::HashArray

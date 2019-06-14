@@ -21,10 +21,10 @@ def find_struct(datatype, all_models):
                     "in all models" % datatype)
 
 
-def find_parameter(name, struct, all_models):
+def find_parameter(name, struct, all_models, delimiter="."):
     ns = name
     if isinstance(name, str):
-        ns = name.split(".")
+        ns = name.split(delimiter)
 
     if not ns:
         raise Exception("Can't find the parameter with no name")
@@ -51,7 +51,7 @@ def find_parameter(name, struct, all_models):
     return find_parameter(
         ns[1:],
         find_struct(p["datatype"], all_models),
-        all_models)
+        all_models, delimiter)
 
 
 def _change_type(index, parent, new_type):
@@ -90,5 +90,10 @@ def preprocess(struct, all_models, cmds):
         if not f:
             raise Exception("Unknown pre-process cmd(%s)" % cmd[0])
 
-        index, parent = find_parameter(cmd[1], struct, all_models)
+        delimiter = "."
+        if cmd[1] in ["-F", "-f"]:
+            delimiter = cmd[2]
+            cmd = cmd[2:]
+
+        index, parent = find_parameter(cmd[1], struct, all_models, delimiter)
         f(index, parent, *cmd[2:])

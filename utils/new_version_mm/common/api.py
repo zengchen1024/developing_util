@@ -181,6 +181,16 @@ def _other_api_info(api, all_models, custom_config):
         crud = {
             "after_send_create_request": "c"
         }[r["when"]]
+
+    elif "multi_invoke" in custom_config:
+        r["multi_invoke"] = custom_config.get("multi_invoke")
+        crud = custom_config.get("crud")
+
+        v = custom_config.get("depends_on")
+        if not v:
+            raise Exception("Must set depends_on for multiple invoke api")
+        r ["depends_on"] = v
+
     else:
         crud = custom_config.get("crud")
 

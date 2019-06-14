@@ -40,6 +40,7 @@ def _generate_override(overrides, api_info, properties, all_models,
     property_overrides = {}
     api_parameter_overrides = {}
     api_async_overrides = {}
+    api_multi_invoke_overrides = {}
 
     for path, v in overrides.items():
         if not isinstance(v, dict):
@@ -53,6 +54,9 @@ def _generate_override(overrides, api_info, properties, all_models,
 
         elif "async_status_check_func" in v:
             api_async_overrides[path] = v
+
+        elif "parameter_pre_process" in v:
+            api_multi_invoke_overrides[path] = v
 
         else:
             raise Exception("find unspported override item(%s) for "
@@ -71,6 +75,11 @@ def _generate_override(overrides, api_info, properties, all_models,
     if api_async_overrides:
         result.update(
             _generate_api_async_override(api_async_overrides, api_info))
+
+    if api_multi_invoke_overrides:
+        result.update(
+            _generate_api_multi_invoke_override(
+                api_multi_invoke_overrides, api_info))
 
 
 def _generate_property_override(overrides, properties):
@@ -151,6 +160,32 @@ def _generate_api_async_override(overrides, api_info):
     return {
         "api_asyncs": pros,
         "has_async_override": True
+    }
+
+
+def _generate_api_multi_invoke_override(overrides, api_info):
+    req_apis = {
+        v["op_id"]: v
+        for v in api_info.values()
+        if v["crud"].find("r") == -1
+    }
+
+    pros = []
+    for path, v in overrides.items():
+        path1 = underscore(path)
+        if path1 not in req_apis:
+            raise Exception("the index(%s) is invalid, "
+                            "unknown operation id" % path)
+        api = req_apis[path1]
+        pros.append({
+            "api": api.get("type", api["op_id"]),
+            "parameter_pre_process": process_override_codes(
+                v.get("parameter_pre_process"), 10)
+        })
+
+    return {
+        "api_multi_invokes": pros,
+        "has_multi_invoke_override": True
     }
 
 

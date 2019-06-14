@@ -294,6 +294,37 @@ class ApiOther(ApiBase):
         super(ApiOther, self).init(api_info, all_models, properties)
 
 
+class ApiMultiInvoke(ApiBase):
+    def __init__(self):
+        super(ApiMultiInvoke, self).__init__("")
+
+        self._crud = ""
+        self._depends_on = ""
+
+    def _render_data(self):
+        v = super(ApiMultiInvoke, self)._render_data()
+        v["api_type"] = "ApiMultiInvoke"
+
+        v["other"] = {
+            "crud": self._crud,
+            "depends_on": self._depends_on
+        }
+        return v
+
+    def init(self, api_info, all_models, properties):
+        self._name = api_info["op_id"]
+        self._crud = api_info.get("crud")
+        self._depends_on = api_info.get("depends_on")
+
+        try:
+            find_property(properties, self._depends_on)
+        except Exception as ex:
+            raise Exception("The depends_on is not correct, err:%s", str(ex))
+
+        # super.init will use self._name
+        super(ApiMultiInvoke, self).init(api_info, all_models, properties)
+
+
 class ApiList(ApiBase):
     def __init__(self, read_api):
         super(ApiList, self).__init__("list")
@@ -434,6 +465,8 @@ def build_resource_api_config(api_info, all_models, properties,
         if not t:
             if v.get("when"):
                 obj = ApiAction()
+            elif v.get("multi_invoke"):
+                obj = ApiMultiInvoke()
             else:
                 obj = ApiOther()
         elif t == "create":
