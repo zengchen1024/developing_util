@@ -196,7 +196,7 @@ def set_descs(tree, descs):
         tree.set_desc(k + " " + v)
 
 
-def add_node(tree, node_info, api_info, all_models):
+def add_node(tree, node_info, api_info):
     if node_info["datatype"] in ("str", "int", "bool"):
         node_info.setdefault("mandatory", None)
 
@@ -208,19 +208,20 @@ def add_node(tree, node_info, api_info, all_models):
             op_id = underscore(p[:i])
             index = p[i+1:]
 
-            body = None
+            api = None
             for _, v in api_info.items():
                 if v["op_id"] == op_id:
-                    body = v["body"]
-                    if v.get("msg_prefix"):
-                        index = index.replace(v.get("msg_prefix") + ".", "")
+                    api = v
                     break
             else:
                 raise Exception("add node failed, the unknown operation "
                                 "id:%s" % p[:i])
 
+            if api.get("msg_prefix"):
+                index = index.replace(api.get("msg_prefix") + ".", "")
+
             try:
-                find_parameter(index, body, all_models)
+                find_parameter(index, api["body"], api["all_models"])
             except Exception as ex:
                 raise Exception("add node failed, can't find parameter(%s) "
                                 "referenced by property(%s), err:%s" % (
@@ -235,7 +236,7 @@ def add_node(tree, node_info, api_info, all_models):
                         "add_node" % node_info["datatype"])
 
 
-def adjust(adjust_cmds, properties, create_api_id, api_info, all_models):
+def adjust(adjust_cmds, properties, create_api_id, api_info):
     if not adjust_cmds:
         return
 
@@ -257,7 +258,7 @@ def adjust(adjust_cmds, properties, create_api_id, api_info, all_models):
                 set_descs(rn, cmd["set_desc"])
 
             elif "add_node" in cmd:
-                add_node(rn, cmd["add_node"], api_info, all_models)
+                add_node(rn, cmd["add_node"], api_info)
 
             else:
                 raise Exception("unknown adjust cmd(%s)" % str(cmd))

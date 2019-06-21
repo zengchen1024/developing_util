@@ -44,7 +44,6 @@ def _generate_yaml(api_path, config_file, product_info, tag_info, output):
     argv = {
         "config_dir": api_path,
         "api_info": api_info,
-        "all_models": all_models,
         "properties": properties,
         "service_type": product_info["service_type"],
         "resource_name": _get_resource_name(tag_info, custom_configs),
@@ -60,10 +59,10 @@ def _generate_yaml(api_path, config_file, product_info, tag_info, output):
     r.extend(build_resource_api_config(**argv))
     write_file(output + "api.yaml", r)
 
-    _generate_platform_yaml(argv, all_models, output)
+    _generate_platform_yaml(argv, output)
 
 
-def _generate_platform_yaml(info, all_models, output):
+def _generate_platform_yaml(info, output):
     r = {
         "ansible": {
             "f": build_ansible_yaml,
@@ -77,7 +76,7 @@ def _generate_platform_yaml(info, all_models, output):
 
     for k, v in r.items():
         if v["data"]:
-            v["f"](v["data"], all_models, output)
+            v["f"](v["data"], output)
 
 
 def _get_cloud_info(cloud_name):

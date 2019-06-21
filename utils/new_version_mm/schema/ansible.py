@@ -6,7 +6,7 @@ from common.utils import (find_property, process_override_codes,
 from common.preprocess import find_parameter
 
 
-def build_ansible_yaml(info, all_models, output):
+def build_ansible_yaml(info, output):
     data = []
     for v in info:
         config = v.get("custom_configs").get("ansible")
@@ -21,7 +21,7 @@ def build_ansible_yaml(info, all_models, output):
         c = config.get("overrides")
         if c:
             _generate_override(
-                c, v["api_info"], v["properties"], all_models,
+                c, v["api_info"], v["properties"],
                 v["resource_name"], r)
 
         if r:
@@ -34,7 +34,7 @@ def build_ansible_yaml(info, all_models, output):
     write_file(output + "ansible.yaml", [s])
 
 
-def _generate_override(overrides, api_info, properties, all_models,
+def _generate_override(overrides, api_info, properties,
                        resource_name, result):
 
     property_overrides = {}
@@ -70,7 +70,7 @@ def _generate_override(overrides, api_info, properties, all_models,
     if api_parameter_overrides:
         result.update(
             _generate_api_parameter_override(
-                api_parameter_overrides, api_info, all_models))
+                api_parameter_overrides, api_info))
 
     if api_async_overrides:
         result.update(
@@ -100,7 +100,7 @@ def _generate_property_override(overrides, properties):
     }
 
 
-def _generate_api_parameter_override(overrides, api_info, all_models):
+def _generate_api_parameter_override(overrides, api_info):
     req_apis = {
         v["op_id"]: v
         for v in api_info.values()
@@ -120,7 +120,7 @@ def _generate_api_parameter_override(overrides, api_info, all_models):
         if api.get("msg_prefix"):
             path = path.replace(api.get("msg_prefix") + ".", "", 1)
 
-        find_parameter(path, api["body"], all_models)
+        find_parameter(path, api["body"], api["all_models"])
 
         m = {"prop_path": "%s.%s" % (api.get("type", api["op_id"]), path)}
 

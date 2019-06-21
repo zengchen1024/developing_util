@@ -85,7 +85,11 @@ def _set_attributes(api_info, properties):
                 for j in i.get_item("crud"):
                     m[j] = 1
 
-        n.set_item("crud", "".join([i for i in "cru" if m[i]]))
+        crud = "".join([i for i in "crud" if m[i]])
+        if not crud:
+            raise Exception("no crud for property(%s)" % n.get_item("name"))
+
+        n.set_item("crud", crud)
 
     def _set_field(n):
         if n.get_item("crud").find("r") != -1:

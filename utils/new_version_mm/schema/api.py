@@ -80,14 +80,15 @@ class ApiBase(object):
 
         return r
 
-    def init(self, api_info, all_models, properties):
+    def init(self, api_info, properties):
+        all_models = api_info.get("all_models")
         api = api_info["api"]
+
         self._path = api["path"]
         self._verb = api["method"].upper()
         self._msg_prefix = api_info.get("msg_prefix")
         self._msg_prefix_array_items = api_info.get("msg_prefix_array_items")
-        self._has_response = (
-            api.get("response", {}).get("datatype") in all_models)
+        self._has_response = api_info["has_response_body"]
         self._header_params = api_info.get("header_params")
 
         self._build_async_info(api_info)
@@ -237,8 +238,8 @@ class ApiCreate(ApiBase):
         })
         return v
 
-    def init(self, api_info, all_models, properties):
-        super(ApiCreate, self).init(api_info, all_models, properties)
+    def init(self, api_info, properties):
+        super(ApiCreate, self).init(api_info, properties)
 
         self._resource_id_path = api_info.get("resource_id_path")
 
@@ -264,13 +265,13 @@ class ApiAction(ApiBase):
         v["action"] = data
         return v
 
-    def init(self, api_info, all_models, properties):
+    def init(self, api_info, properties):
         self._name = api_info["op_id"]
         self._when = api_info.get("when")
         self._path_parameter = api_info.get("path_parameter")
 
         # super.init will use self._name
-        super(ApiAction, self).init(api_info, all_models, properties)
+        super(ApiAction, self).init(api_info, properties)
 
 
 class ApiOther(ApiBase):
@@ -286,12 +287,12 @@ class ApiOther(ApiBase):
         v["other"] = {"crud": self._crud}
         return v
 
-    def init(self, api_info, all_models, properties):
+    def init(self, api_info, properties):
         self._name = api_info["op_id"]
         self._crud = api_info.get("crud")
 
         # super.init will use self._name
-        super(ApiOther, self).init(api_info, all_models, properties)
+        super(ApiOther, self).init(api_info, properties)
 
 
 class ApiMultiInvoke(ApiBase):
@@ -311,7 +312,7 @@ class ApiMultiInvoke(ApiBase):
         }
         return v
 
-    def init(self, api_info, all_models, properties):
+    def init(self, api_info, properties):
         self._name = api_info["op_id"]
         self._crud = api_info.get("crud")
         self._depends_on = api_info.get("depends_on")
@@ -322,7 +323,7 @@ class ApiMultiInvoke(ApiBase):
             raise Exception("The depends_on is not correct, err:%s", str(ex))
 
         # super.init will use self._name
-        super(ApiMultiInvoke, self).init(api_info, all_models, properties)
+        super(ApiMultiInvoke, self).init(api_info, properties)
 
 
 class ApiList(ApiBase):
@@ -357,8 +358,8 @@ class ApiList(ApiBase):
 
         return v
 
-    def init(self, api_info, all_models, properties):
-        super(ApiList, self).init(api_info, all_models, properties)
+    def init(self, api_info, properties):
+        super(ApiList, self).init(api_info, properties)
 
         if self._read_api:
             _build_field(
@@ -454,7 +455,7 @@ class ApiList(ApiBase):
         return None
 
 
-def build_resource_api_config(api_info, all_models, properties,
+def build_resource_api_config(api_info, properties,
                               service_type, **kwargs):
     r = ["    apis:\n"]
 
@@ -482,7 +483,7 @@ def build_resource_api_config(api_info, all_models, properties,
             s = service_type
         obj.service_type = s
         obj.service_level = ("domain" if s in ["identity"] else "project")
-        obj.init(v, all_models, properties)
+        obj.init(v, properties)
         r.extend(obj.render())
 
     return r

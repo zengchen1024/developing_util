@@ -1,13 +1,13 @@
 from common import mm_param
 
 
-def build_resource_params(api_info, all_models):
+def build_resource_params(api_info):
 
     properties = None
     for i in "crud":
         for k, v in api_info.items():
             if v["crud"].find(i) != -1 and (not v.get("exclude_for_schema")):
-                r = _build_params(v, all_models)
+                r = _build_params(v)
                 if not r:
                     continue
 
@@ -19,7 +19,7 @@ def build_resource_params(api_info, all_models):
     return properties
 
 
-def _build_params(api_info, all_models):
+def _build_params(api_info):
 
     def _init_node(n):
         if api_info["crud"].find("c") == -1:
@@ -38,7 +38,7 @@ def _build_params(api_info, all_models):
 
     body = api_info.get("body")
     if body:
-        r = mm_param.build(body, all_models, _index_method)
+        r = mm_param.build(body, api_info["all_models"], _index_method)
         for v in r.values():
             v.traverse(_init_node)
 

@@ -11,10 +11,10 @@ def generate_resource_properties(api_yaml, all_models, custom_configs):
     api_info = build_resource_api_info(api_yaml, all_models,
                                        custom_configs.get("apis", {}))
 
-    properties = build_resource_params(api_info, all_models)
+    properties = build_resource_params(api_info)
 
     adjust(custom_configs.get("adjust", []), properties,
-           api_info["create"]["op_id"], api_info, all_models)
+           api_info["create"]["op_id"], api_info)
 
     # _set_property(api_info, properties)
     # _set_output(properties)
