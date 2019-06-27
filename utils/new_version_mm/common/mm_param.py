@@ -83,6 +83,11 @@ class Basic(object):
                 "value": None,
                 "yaml": lambda n, k, v: _indent(n, k, v),
             },
+
+            "identities": {
+                "value": None,
+                "yaml": self._to_identity_yaml,
+            },
         }
 
     @property
@@ -250,6 +255,13 @@ class Basic(object):
 
         result.pop()
         return "".join(result)
+
+    def _to_identity_yaml(self, indent, k, v):
+        r = ["%s%s:\n" % (' ' * indent, k)]
+        indent += 2
+        for i in v:
+            r.append("%s- %s\n" % (' ' * indent, i))
+        return "".join(r)
 
 
 class MMString(Basic):

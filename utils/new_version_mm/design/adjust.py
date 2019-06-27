@@ -92,6 +92,30 @@ class _Tree(object):
         self.find_param(v[0]).set_item("required",
                                        v[1].lower() in ["true", "yes", 1])
 
+    def add_ref_path(self, argv):
+        ex_msg = "Execute cmd(add_ref_path %s) failed, " % argv
+
+        v = argv.split(" ")
+        if len(v) != 2:
+            raise Exception("%smust input node and its value" % ex_msg)
+
+        # TODO: check the parameter
+        v1 = v[1].split(".")
+        self.find_param(v[0]).path[v1[0]] = ".".join(v1[1:])
+
+    def set_array_identity(self, argv):
+        ex_msg = "Execute cmd(set_array_identity %s) failed, " % argv
+
+        v = argv.split(" ")
+        if len(v) < 2:
+            raise Exception("%smust input node and its value" % ex_msg)
+
+        n = self.find_param(v[0])
+        if not isinstance(n, mm_param.MMArray):
+            raise Exception("%sthe property must be an array")
+
+        n.set_item("identities", v[1:])
+
     def delete(self, node):
         p = self.find_param(node)
         p.parent.delete_child(_node_index(p))
@@ -250,6 +274,8 @@ def adjust(adjust_cmds, properties, create_api_id, api_info):
         'add_path_param': functools.partial(rn.add_path_param, create_api_id),
         'default_value': rn.default_value,
         'change_required': rn.change_required,
+        'add_ref_path': rn.add_ref_path,
+        'set_array_identity': rn.set_array_identity,
     }
 
     for cmd in adjust_cmds:
