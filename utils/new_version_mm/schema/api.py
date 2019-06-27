@@ -64,6 +64,7 @@ class ApiBase(object):
         self._render_parameters = True
         self._has_response = False
         self._header_params = None
+        self._path_parameter = None
 
     def render(self):
         v = self._render_data()
@@ -90,6 +91,7 @@ class ApiBase(object):
         self._msg_prefix_array_items = api_info.get("msg_prefix_array_items")
         self._has_response = api_info["has_response_body"]
         self._header_params = api_info.get("header_params")
+        self._path_parameter = api_info.get("path_parameter")
 
         self._build_async_info(api_info)
 
@@ -172,6 +174,22 @@ class ApiBase(object):
                     ac["check_status"][k] = [{"value": v} for v in p]
                     ac["check_status"]["has_" + k] = True
 
+            result = ac.get("result")
+            if isinstance(result, str):
+                ac["result"] = {"field": result}
+
+            elif isinstance(result, dict):
+                v = result.get("sub_job_identity")
+                if v:
+                    result["has_sub_job_identity"] = True
+                    result["sub_job_identity"] = [
+                        {
+                            "key": k,
+                            "value": str(v1).lower() if isinstance(
+                                v1, bool) else v1
+                        }
+                        for k, v1 in v.items()]
+
             self._async = ac
 
     def _render_data(self):
@@ -200,6 +218,13 @@ class ApiBase(object):
             r["header_params"] = [
                 {"key": k, "value": v} for k, v in self._header_params.items()
             ]
+
+        p = self._path_parameter
+        if p:
+            v = [{"key": k, "value": i} for k, i in p.items()]
+            r["path_parameter"] = v
+            r["has_path_parameter"] = True
+
         return r
 
     def _generate_parameter_config(self):
@@ -249,26 +274,17 @@ class ApiAction(ApiBase):
         super(ApiAction, self).__init__("")
 
         self._when = ""
-        self._path_parameter = None
 
     def _render_data(self):
         v = super(ApiAction, self)._render_data()
         v["api_type"] = "ApiAction"
 
-        data = {"when": self._when}
-        p = self._path_parameter
-        if p:
-            r = [{"key": k, "value": i} for k, i in p.items()]
-            data["path_parameter"] = r
-            data["has_path_parameter"] = True
-
-        v["action"] = data
+        v["action"] = {"when": self._when}
         return v
 
     def init(self, api_info, properties):
         self._name = api_info["op_id"]
         self._when = api_info.get("when")
-        self._path_parameter = api_info.get("path_parameter")
 
         # super.init will use self._name
         super(ApiAction, self).init(api_info, properties)

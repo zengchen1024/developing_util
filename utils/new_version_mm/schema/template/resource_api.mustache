@@ -29,13 +29,13 @@
           {{#when}}
         when: "{{when}}"
           {{/when}}
-          {{#has_path_parameter}}
-        path_parameter:
-            {{#path_parameter}}
-          {{key}}: '{{value}}'
-            {{/path_parameter}}
-          {{/has_path_parameter}}
         {{/action}}
+        {{#has_path_parameter}}
+        path_parameter:
+          {{#path_parameter}}
+          {{key}}: '{{value}}'
+          {{/path_parameter}}
+        {{/has_path_parameter}}
         {{#other}}
           {{#crud}}
         crud: "{{crud}}"
@@ -70,12 +70,12 @@
               {{key}}: '{{value}}'
             {{/header_params}}
             {{/query_status.has_header_params}}
-            {{#has_path_parameter}}
+            {{#query_status.has_path_parameter}}
             path_parameter:
-            {{#path_parameter}}
+            {{#query_status.path_parameter}}
               {{key}}: '{{value}}'
-            {{/path_parameter}}
-            {{/has_path_parameter}}
+            {{/query_status.path_parameter}}
+            {{/query_status.has_path_parameter}}
             {{#query_interval_ms}}
             wait_ms: {{query_interval_ms}}
             {{/query_interval_ms}}
@@ -98,7 +98,16 @@
           {{/check_status}}
           {{#result}}
           result: !ruby/object:Api::Async::Result
-            field: '{{result}}'
+            field: '{{field}}'
+            {{#sub_jobs_path}}
+            sub_jobs_path: '{{sub_jobs_path}}'
+            {{/sub_jobs_path}}
+            {{#has_sub_job_identity}}
+            sub_job_identity:
+            {{#sub_job_identity}}
+              {{key}}: {{value}}
+            {{/sub_job_identity}}
+            {{/has_sub_job_identity}}
           {{/result}}
           {{#timeout}}
           timeout: {{timeout}}

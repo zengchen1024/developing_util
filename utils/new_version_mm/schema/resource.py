@@ -101,6 +101,10 @@ def _set_attributes(api_info, properties):
         _set_crud(n, leaf)
         _set_field(n)
 
+        if n.alias:
+            raise Exception(
+                "the alias of property(%s) is not empty" % n.get_item("name"))
+
     for i in properties.values():
         i.parent = None
         i.post_traverse(callbacks)
