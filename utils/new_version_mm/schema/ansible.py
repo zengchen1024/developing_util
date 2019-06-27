@@ -280,21 +280,28 @@ def _gen_module_params(params, spaces, array_item=False):
         elif isinstance(v, list):
             r.append("%s%s:" % (' ' * spaces, k))
 
-            if isinstance(v[0], dict):
-                r.append(_gen_module_params(v, spaces + 4), True)
-            else:
-                if isinstance(v[0], str):
-                    for i in v:
-                        r.append("%s- \"%s\"" % (' ' * (spaces + 2), str(i)))
+            for item in v:
+                if isinstance(item, dict):
+                    r.append(_gen_module_params(item, spaces + 4, True))
+
+                elif isinstance(item, str):
+                    r.append("%s- \"%s\"" % (' ' * (spaces + 2), item))
+
+                elif isinstance(item, bool):
+                    r.append("%s- %s" % (' ' * (spaces + 2),
+                                         str(item).lower()))
+
                 else:
-                    for i in v:
-                        r.append("%s- %s" % (' ' * (spaces + 2), str(i)))
+                    r.append("%s- %s" % (' ' * (spaces + 2), str(item)))
+
+        elif isinstance(v, str):
+            r.append("%s%s: \"%s\"" % (' ' * spaces, k, v))
+
+        elif isinstance(v, bool):
+            r.append("%s%s: %s" % (' ' * spaces, k, str(v).lower()))
 
         else:
-            if isinstance(v, str):
-                r.append("%s%s: \"%s\"" % (' ' * spaces, k, str(v)))
-            else:
-                r.append("%s%s: %s" % (' ' * spaces, k, str(v)))
+            r.append("%s%s: %s" % (' ' * spaces, k, str(v)))
 
     if array_item:
         r[0] = "%s- %s" % (' ' * (spaces - 2), r[0].strip())
