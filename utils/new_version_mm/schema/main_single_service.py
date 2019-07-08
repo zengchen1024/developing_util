@@ -1,5 +1,6 @@
 import os
 import pystache
+import re
 import sys
 sys.path.append("..")
 
@@ -106,7 +107,12 @@ def _get_resource_name(tag_info, custom_configs):
         raise Exception("Must config resource_name in English, "
                         "because the tag is Chinese")
 
-    return rn[0].upper() + rn[1:]
+    s = rn[0].upper() + rn[1:]
+    m = re.match(r"([A-Z]+[a-z0-9]*)+", s)
+    if not m or m.end() != len(s):
+        raise Exception("resouce name must comply with camel-case")
+
+    return s
 
 
 def _get_version(api_info):
