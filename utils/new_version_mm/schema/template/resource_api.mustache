@@ -56,6 +56,12 @@
           {{name}}: '{{ref}}'
         {{/identity}}
         {{/has_identity}}
+        {{#has_success_codes}}
+        success_codes:
+        {{#success_codes}}
+          - {{code}}
+        {{/success_codes}}
+        {{/has_success_codes}}
         {{#async}}
         async: !ruby/object:Api::Async
           {{#query_status}}
@@ -79,6 +85,12 @@
             {{#query_interval_ms}}
             wait_ms: {{query_interval_ms}}
             {{/query_interval_ms}}
+            {{#query_status.has_success_codes}}
+            success_codes:
+            {{#success_codes}}
+              - {{code}}
+            {{/success_codes}}
+            {{/query_status.has_success_codes}}
           {{/query_status}}
           {{#check_status}}
           status_check: !ruby/object:Api::Async::Status

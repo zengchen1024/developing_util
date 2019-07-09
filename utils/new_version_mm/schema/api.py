@@ -65,6 +65,7 @@ class ApiBase(object):
         self._has_response = False
         self._header_params = None
         self._path_parameter = None
+        self._success_codes = None
 
     def render(self):
         v = self._render_data()
@@ -92,6 +93,7 @@ class ApiBase(object):
         self._has_response = api_info["has_response_body"]
         self._header_params = api_info.get("header_params")
         self._path_parameter = api_info.get("path_parameter")
+        self._success_codes = api_info.get("success_codes")
 
         self._build_async_info(api_info)
 
@@ -150,8 +152,8 @@ class ApiBase(object):
                 p = qs.get("path_parameter")
                 if p and isinstance(p, dict):
                     r = [{"key": k, "value": v} for k, v in p.items()]
-                    ac["query_status"]["path_parameter"] = r
-                    ac["query_status"]["has_path_parameter"] = True
+                    qs["path_parameter"] = r
+                    qs["has_path_parameter"] = True
 
                 if "service_type" not in qs:
                     qs["service_type"] = self.service_type
@@ -162,11 +164,17 @@ class ApiBase(object):
                 p = qs.get("header_params")
                 if p and isinstance(p, dict):
                     r = [{"key": k, "value": v} for k, v in p.items()]
-                    ac["query_status"]["header_params"] = r
-                    ac["query_status"]["has_header_params"] = True
+                    qs["header_params"] = r
+                    qs["has_header_params"] = True
 
                 if "name" not in qs:
                     qs["name"] = self._name + "_async"
+
+                p = qs.get("success_codes")
+                if p:
+                    v = [{"code": i} for i in p]
+                    qs["success_codes"] = v
+                    qs["has_success_codes"] = True
 
             for k in ["pending", "complete"]:
                 p = ac.get("check_status", {}).get(k)
@@ -225,6 +233,11 @@ class ApiBase(object):
             r["path_parameter"] = v
             r["has_path_parameter"] = True
 
+        p = self._success_codes
+        if p:
+            v = [{"code": i} for i in p]
+            r["success_codes"] = v
+            r["has_success_codes"] = True
         return r
 
     def _generate_parameter_config(self):
