@@ -68,3 +68,9 @@ def process_override_codes(v, indent):
         row = row.strip("\t")
         r.append("%s%s" % (' ' * indent, row) if len(row) > 0 else row)
     return "\n".join(r)
+
+
+def fetch_api(api_info, name):
+    for  _, v in api_info.items():
+        if v["name"] == name:
+            return v

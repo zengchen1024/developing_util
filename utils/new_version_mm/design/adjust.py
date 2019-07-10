@@ -3,7 +3,7 @@ import re
 
 from common import mm_param
 from common.preprocess import find_parameter
-from common.utils import underscore
+from common.utils import (fetch_api, underscore)
 
 
 def _node_index(n):
@@ -190,7 +190,7 @@ class _Tree(object):
         p = {
             "name": name,
             "datatype": dt,
-            "description": argv[argv.find(dt) + len(dt) + 1:],
+            "description": argv[argv.find(dt) + len(dt) + 1:].strip("\""),
             "mandatory": True
         }
         p = mm_param.build([p], None, lambda n: n["name"], parent)[name]
@@ -229,18 +229,14 @@ def add_node(tree, node_info, api_info):
 
         for p in node_info["path"]:
             i = p.find(".")
-            op_id = underscore(p[:i])
+
+            api_index = underscore(p[:i])
+            api = api_info.get(api_index)
+            if not api:
+                raise Exception("add node failed, the unknown api index:"
+                                "%s" % p[:i])
+
             index = p[i+1:]
-
-            api = None
-            for _, v in api_info.items():
-                if v["op_id"] == op_id:
-                    api = v
-                    break
-            else:
-                raise Exception("add node failed, the unknown operation "
-                                "id:%s" % p[:i])
-
             if api.get("msg_prefix"):
                 index = index.replace(api.get("msg_prefix") + ".", "")
 
@@ -251,7 +247,7 @@ def add_node(tree, node_info, api_info):
                                 "referenced by property(%s), err:%s" % (
                                     index, node_info["name"], str(ex)))
 
-            node.path[op_id] = index
+            node.path[api_index] = index
 
         tree.add_child(_node_index(node), node)
 
@@ -260,7 +256,7 @@ def add_node(tree, node_info, api_info):
                         "add_node" % node_info["datatype"])
 
 
-def adjust(adjust_cmds, properties, create_api_id, api_info):
+def adjust(adjust_cmds, properties, api_info):
     if not adjust_cmds:
         return
 
@@ -271,7 +267,9 @@ def adjust(adjust_cmds, properties, create_api_id, api_info):
         'merge_to': rn.merge_to,
         'move': rn.move,
         'set_desc': rn.set_desc,
-        'add_path_param': functools.partial(rn.add_path_param, create_api_id),
+        'add_path_param': functools.partial(
+            rn.add_path_param,
+            fetch_api(api_info, "create")["api_index"]),
         'default_value': rn.default_value,
         'change_required': rn.change_required,
         'add_ref_path': rn.add_ref_path,

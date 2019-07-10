@@ -6,7 +6,7 @@ sys.path.append("..")
 
 from ansible import build_ansible_yaml
 from api import build_resource_api_config
-from common.utils import (normal_dir, read_yaml, write_file)
+from common.utils import (fetch_api, normal_dir, read_yaml, write_file)
 from design.resource_params_tree import generate_resource_properties
 from resource import build_resource_config
 from terraform import build_terraform_yaml
@@ -116,7 +116,8 @@ def _get_resource_name(tag_info, custom_configs):
 
 
 def _get_version(api_info):
-    version = api_info["create"]["api"].get("version")
+    api = fetch_api(api_info, "create")
+    version = api["api"].get("version")
     if version:
         v = [i.strip().lower() for i in version.split(",")]
         v.sort()

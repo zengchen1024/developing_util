@@ -101,20 +101,13 @@ def _generate_property_override(overrides, properties):
 
 
 def _generate_api_parameter_override(overrides, api_info):
-    req_apis = {
-        v["op_id"]: v
-        for v in api_info.values()
-        if v["crud"].find("r") == -1 or v.get("type", "") == "list"
-    }
-
     params = []
     for path, v in overrides.items():
         pv = path.split(".")
 
-        api = req_apis.get(underscore(pv[0]))
+        api = api_info.get(underscore(pv[0]))
         if not api:
-            raise Exception("the index(%s) is invalid, "
-                            "unknown operation id" % path)
+            raise Exception("unknown api index(%s)" % pv[0])
 
         path = ".".join(pv[1:])
         if api.get("msg_prefix"):
@@ -139,21 +132,14 @@ def _generate_api_parameter_override(overrides, api_info):
 
 
 def _generate_api_async_override(overrides, api_info):
-    req_apis = {
-        v["op_id"]: v
-        for v in api_info.values()
-        if v["crud"].find("r") == -1
-    }
-
     pros = []
     for path, v in overrides.items():
         path1 = underscore(path)
-        if path1 not in req_apis:
-            raise Exception("the index(%s) is invalid, "
-                            "unknown operation id" % path)
-        api = req_apis[path1]
+        if path1 not in api_info:
+            raise Exception("unknown api index(%s)" % path)
+
         pros.append({
-            "api": api.get("type", api["op_id"]),
+            "api": path1,
             "custom_status_check_func": v.get("async_status_check_func")
         })
 
@@ -164,21 +150,14 @@ def _generate_api_async_override(overrides, api_info):
 
 
 def _generate_api_multi_invoke_override(overrides, api_info):
-    req_apis = {
-        v["op_id"]: v
-        for v in api_info.values()
-        if v["crud"].find("r") == -1
-    }
-
     pros = []
     for path, v in overrides.items():
         path1 = underscore(path)
-        if path1 not in req_apis:
-            raise Exception("the index(%s) is invalid, "
-                            "unknown operation id" % path)
-        api = req_apis[path1]
+        if path1 not in api_info:
+            raise Exception("unknown api index(%s)" % path)
+
         pros.append({
-            "api": api.get("type", api["op_id"]),
+            "api": path1,
             "parameter_pre_process": process_override_codes(
                 v.get("parameter_pre_process"), 10)
         })

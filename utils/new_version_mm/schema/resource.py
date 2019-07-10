@@ -49,11 +49,16 @@ class _Resource(object):
 
 
 def _set_output(properties):
+
     def _output(n):
         p = n.parent
         if n.get_item("crud") == 'r' and (
                 p is None or p.get_item("crud") != 'r'):
             n.set_item("output", True)
+
+        if n.alias:
+            raise Exception(
+                "the alias of property(%s) is not empty" % n.get_item("name"))
 
     for v in properties.values():
         v.parent = None
@@ -61,18 +66,13 @@ def _set_output(properties):
 
 
 def _set_attributes(api_info, properties):
-    info = {v["op_id"]: v["crud"] for v in api_info.values()}
-    read_apis = {
-        v["op_id"]: v["op_id"] if v.get("type") is None else v["type"]
-        for v in api_info.values() if v["crud"].find("r") != -1
-    }
 
-    def _set_crud(n, leaf):
+    def _callback(n, leaf):
         m = {"c": 0, "r": 0, "u": 0, "d": 0}
 
         if leaf:
-            for v in n.path:
-                m[info[v]] += 1
+            for p in n.path:
+                m[api_info[p]["crud"]] += 1
 
             if m["r"] > 1:
                 raise Exception("there are more than one read api have the "
@@ -91,23 +91,15 @@ def _set_attributes(api_info, properties):
 
         n.set_item("crud", crud)
 
-    def _set_field(n):
-        if n.get_item("crud").find("r") != -1:
+        if crud.find("r") != -1:
             for k, v in n.path.items():
-                if info[k] == "r":
-                    n.set_item("field", read_apis[k] + "." + v)
-
-    def callbacks(n, leaf):
-        _set_crud(n, leaf)
-        _set_field(n)
-
-        if n.alias:
-            raise Exception(
-                "the alias of property(%s) is not empty" % n.get_item("name"))
+                if api_info[k]["crud"] == "r":
+                    n.set_item("field", k + "." + v)
+                    break
 
     for i in properties.values():
         i.parent = None
-        i.post_traverse(callbacks)
+        i.post_traverse(_callback)
 
 
 def build_resource_config(api_info, properties, resource_name,

@@ -5,7 +5,7 @@ def build_resource_params(api_info):
 
     properties = None
     for i in "crud":
-        for k, v in api_info.items():
+        for _, v in api_info.items():
             if v["crud"].find(i) != -1 and (not v.get("exclude_for_schema")):
                 r = _build_params(v)
                 if not r:
@@ -25,7 +25,7 @@ def _build_params(api_info):
         if api_info["crud"].find("c") == -1:
             n.set_item("required", None)
 
-        op = api_info["op_id"]
+        op = api_info["api_index"]
 
         if n.parent is None:
             n.path[op] = n.get_item("name")

@@ -1,8 +1,7 @@
 import pystache
 
-from common.utils import find_property
-from common.utils import remove_none
 from common import mm_param
+from common.utils import (fetch_api, find_property, remove_none)
 
 
 def _build_field(op_id, properties, parameters):
@@ -51,8 +50,9 @@ def _set_desc(params):
 
 
 class ApiBase(object):
-    def __init__(self, name):
-        self._name = name
+    def __init__(self):
+        self._name = ""
+        self._index = ""
         self._path = ""
         self._verb = ""
         self._parameters = None
@@ -86,6 +86,8 @@ class ApiBase(object):
         all_models = api_info.get("all_models")
         api = api_info["api"]
 
+        self._name = api_info["name"]
+        self._index = api_info["api_index"]
         self._path = api["path"]
         self._verb = api["method"].upper()
         self._msg_prefix = api_info.get("msg_prefix")
@@ -202,7 +204,7 @@ class ApiBase(object):
 
     def _render_data(self):
         r = {
-            "api_key":   self._name,
+            "api_key":   self._index,
             "api_type": "ApiBasic",
             "name":      self._name,
             "path":      self._path,
@@ -263,7 +265,7 @@ class ApiBase(object):
 
 class ApiCreate(ApiBase):
     def __init__(self):
-        super(ApiCreate, self).__init__("create")
+        super(ApiCreate, self).__init__()
 
         self._resource_id_path = ""
 
@@ -284,7 +286,7 @@ class ApiCreate(ApiBase):
 
 class ApiAction(ApiBase):
     def __init__(self):
-        super(ApiAction, self).__init__("")
+        super(ApiAction, self).__init__()
 
         self._when = ""
 
@@ -296,16 +298,14 @@ class ApiAction(ApiBase):
         return v
 
     def init(self, api_info, properties):
-        self._name = api_info["op_id"]
         self._when = api_info.get("when")
 
-        # super.init will use self._name
         super(ApiAction, self).init(api_info, properties)
 
 
 class ApiOther(ApiBase):
     def __init__(self):
-        super(ApiOther, self).__init__("")
+        super(ApiOther, self).__init__()
 
         self._crud = ""
 
@@ -317,16 +317,14 @@ class ApiOther(ApiBase):
         return v
 
     def init(self, api_info, properties):
-        self._name = api_info["op_id"]
         self._crud = api_info.get("crud")
 
-        # super.init will use self._name
         super(ApiOther, self).init(api_info, properties)
 
 
 class ApiMultiInvoke(ApiBase):
     def __init__(self):
-        super(ApiMultiInvoke, self).__init__("")
+        super(ApiMultiInvoke, self).__init__()
 
         self._crud = ""
         self._depends_on = ""
@@ -342,7 +340,6 @@ class ApiMultiInvoke(ApiBase):
         return v
 
     def init(self, api_info, properties):
-        self._name = api_info["op_id"]
         self._crud = api_info.get("crud")
         self._depends_on = api_info.get("depends_on")
 
@@ -351,13 +348,12 @@ class ApiMultiInvoke(ApiBase):
         except Exception as ex:
             raise Exception("The depends_on is not correct, err:%s", str(ex))
 
-        # super.init will use self._name
         super(ApiMultiInvoke, self).init(api_info, properties)
 
 
 class ApiList(ApiBase):
     def __init__(self, read_api):
-        super(ApiList, self).__init__("list")
+        super(ApiList, self).__init__()
 
         self._query_params = None
         self._identity = None
@@ -484,11 +480,11 @@ class ApiList(ApiBase):
         return None
 
 
-def build_resource_api_config(api_info, properties,
-                              service_type, **kwargs):
+def build_resource_api_config(api_info, properties, service_type, **kwargs):
     r = ["    apis:\n"]
+    read_api = fetch_api(api_info, "read")
 
-    for v in api_info.values():
+    for k, v in api_info.items():
         t = v.get("type")
 
         obj = None
@@ -502,9 +498,9 @@ def build_resource_api_config(api_info, properties,
         elif t == "create":
             obj = ApiCreate()
         elif t == "list":
-            obj = ApiList(api_info.get("read"))
+            obj = ApiList(read_api)
         else:
-            obj = ApiBase(t)
+            obj = ApiBase()
 
         # obj.init will use obj.service_type
         s = v.get("service_type")

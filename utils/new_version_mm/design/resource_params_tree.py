@@ -3,6 +3,7 @@ import re
 from adjust import adjust
 from common.api import build_resource_api_info
 from common import mm_param
+from common.utils import fetch_api
 from parameter import build_resource_params
 
 
@@ -13,11 +14,7 @@ def generate_resource_properties(api_yaml, all_models, custom_configs):
 
     properties = build_resource_params(api_info)
 
-    adjust(custom_configs.get("adjust", []), properties,
-           api_info["create"]["op_id"], api_info)
-
-    # _set_property(api_info, properties)
-    # _set_output(properties)
+    adjust(custom_configs.get("adjust", []), properties, api_info)
 
     _change_path_parameter(api_info, properties)
 
@@ -39,7 +36,7 @@ def _get_all_path_params(api_info):
 
 
 def _new_name_of_path_param(api_info, params, properties):
-    create_op_id = api_info["create"]["op_id"]
+    create_op_id = fetch_api(api_info, "create")["api_index"]
     r = {}
     for n in params:
         v = []
@@ -70,12 +67,11 @@ def _new_name_of_path_param(api_info, params, properties):
 
 def _path_parameter_resource_id(apis):
     rid = []
-    for i in ["read", "delete", "update"]:
-        api = apis.get(i)
-        if not api:
+    for _, v in apis.items():
+        if v.get("type", "") not in ["read", "delete", "update"]:
             continue
 
-        path = api["api"]["path"]
+        path = v["api"]["path"]
         s = re.search(r"{[A-Za-z0-9_]+}$", path)
         if s:
             rid.append(path[s.start() + 1: s.end() - 1])
@@ -106,57 +102,3 @@ def _change_path_parameter(api_info, properties):
             for i in old_params[o]:
                 api_info[i]["api"]["path"] = re.sub(
                     r"{%s}" % o, "{%s}" % n, api_info[i]["api"]["path"])
-
-
-def _set_output(properties):
-    def _output(n):
-        p = n.parent
-        if n.get_item("crud") == 'r' and (
-                p is None or p.get_item("crud") != 'r'):
-            n.set_item("output", True)
-
-    for v in properties.values():
-        v.parent = None
-        v.traverse(_output)
-
-
-def _set_property(api_info, properties):
-    info = {v["op_id"]: v["crud"] for v in api_info.values()}
-    read_apis = {
-        v["op_id"]: v["op_id"] if v.get("type") is None else v["type"]
-        for v in api_info.values() if v["crud"].find("r") != -1
-    }
-
-    def _set_crud(n, leaf):
-        m = {"c": 0, "r": 0, "u": 0, "d": 0}
-
-        if leaf:
-            for v in n.path:
-                m[info[v]] += 1
-
-            if m["r"] > 1:
-                raise Exception("there are more than one read api have the "
-                                "same parameter for property(%s), please "
-                                "delete them to leave only "
-                                "one" % n.get_item("name"))
-
-        else:
-            for i in n.childs():
-                for j in i.get_item("crud"):
-                    m[j] = 1
-
-        n.set_item("crud", "".join([i for i in "cru" if m[i]]))
-
-    def _set_field(n):
-        if n.get_item("crud").find("r") != -1:
-            for k, v in n.path.items():
-                if info[k] == "r":
-                    n.set_item("field", read_apis[k] + "." + v)
-
-    def callbacks(n, leaf):
-        _set_crud(n, leaf)
-        _set_field(n)
-
-    for i in properties.values():
-        i.parent = None
-        i.post_traverse(callbacks)
