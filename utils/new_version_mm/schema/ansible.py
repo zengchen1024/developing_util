@@ -115,7 +115,7 @@ def _generate_api_parameter_override(overrides, api_info):
 
         find_parameter(path, api["body"], api["all_models"])
 
-        m = {"prop_path": "%s.%s" % (api.get("type", api["op_id"]), path)}
+        m = {"prop_path": "%s.%s" % (api["api_index"], path)}
 
         if "to_request" in v:
             m["to_request"] = process_override_codes(v.get("to_request"), 10)

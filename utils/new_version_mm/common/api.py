@@ -256,83 +256,71 @@ def _remove_project(api_info):
             q["path"] = _f(q["path"]).lstrip("/")
 
 
-def _build_api_info(api_index, custom_config, api_yaml, all_models):
-    op_id = underscore(api_index)
-    api = api_yaml.get(op_id)
-    if not api:
-        k = str(custom_config.get("operation_id", ""))
-        if not k:
-            raise Exception("Check the index of api(%s) to set a correct "
-                            "operation id or set operation_id "
-                            "for it" % api_index)
+def _build_api_info(api_type, api, all_models, custom_config):
+    m = {
+        "create": _create_api_info,
+        "read": _read_api_info,
+        "delete": _delete_api_info,
+        "update": _update_api_info,
+        "list": _list_api_info,
+    }
 
-        op_id = underscore(k)
-        api = api_yaml.get(op_id)
-        if not api:
-            raise Exception("Unknown opertion id:%s" % k)
-
-    r = None
-    t = custom_config.get("type")
-    if t:
-        m = {
-            "create": _create_api_info,
-            "read": _read_api_info,
-            "delete": _delete_api_info,
-            "update": _update_api_info,
-            "list": _list_api_info,
-        }
-
-        if t not in m:
-            raise Exception("Unknown api type(%s)" % t)
-
-        r = m[t](api, all_models, custom_config)
-    else:
-        r = _other_api_info(api, all_models, custom_config)
-
-    r["op_id"] = op_id
-    r["api"] = api
-    return r
+    return m.get(api_type, _other_api_info)(api, all_models, custom_config)
 
 
 def build_resource_api_info(api_yaml, all_models, custom_configs):
+    apis = {underscore(k): k for k in custom_configs}
+    if len(apis) != len(custom_configs):
+        raise Exception("There are same indexes for apis. Note: the api "
+                        "index is case insensitive")
+
     result = {}
-    for k, v in custom_configs.items():
-        r = _build_api_info(k, v, api_yaml, all_models)
+    for k, k1 in apis.items():
+        cc = custom_configs[k1]
+
+        op_id = str(cc.get("operation_id", ""))
+        if not op_id:
+            raise Exception("Must set operation_id for api(%s)" % k1)
+
+        api = api_yaml.get(underscore(op_id))
+        if not api:
+            raise Exception("Unknown opertion id:%s" % op_id)
+
+        r = _build_api_info(k, api, all_models, cc)
 
         if len(r["crud"]) != 1:
             raise Exception(
                 "The crud of api(%s) must be one of c, r, u, d" % k)
 
-        if "type" not in v and "name" not in v:
-            raise Exception("Must set name for api(%s)" % k)
-
-        if v.get("name", "") in ["create", "read", "update", "delete", "list"]:
-            raise Exception("Don't set the api(%s) name as create, read, "
-                            "update, delete, list" % k)
-
-        r["name"] = v["type"] if "type" in v else v["name"]
-        r["api_index"] = underscore(k)
+        r["name"] = k
+        r["api_index"] = k
+        r["op_id"] = op_id
+        r["api"] = api
         r["has_response_body"] = (
-            r["api"].get("response", {}).get("datatype") in all_models)
-        r["verb"] = r["api"]["method"].upper()
-        r["async"] = v.get("async")
+            api.get("response", {}).get("datatype") in all_models)
+        r["verb"] = api["method"].upper()
+        r["async"] = cc.get("async")
 
-        if v.get("exclude_for_schema"):
+        if cc.get("exclude_for_schema"):
             r["exclude_for_schema"] = True
 
         for i in ["path_parameter", "header_params",
                   "service_type", "success_codes"]:
-            if i in v:
-                r[i] = v[i]
+            if i in cc:
+                r[i] = cc[i]
 
         _remove_project(r)
 
-        result[r["api_index"]] = r
+        result[k] = r
 
     # avoid generating properties of both read and list
     read_api = fetch_api(result, "read")
     list_api = fetch_api(result, "list")
     if read_api and list_api:
         list_api["exclude_for_schema"] = True
+
+    for i in ["create", "delete"]:
+        if fetch_api(result, i) is None:
+            raise Exception("Must configue %s api" % i)
 
     return result

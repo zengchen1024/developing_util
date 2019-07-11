@@ -1,7 +1,8 @@
 import pystache
 
 from common import mm_param
-from common.utils import (fetch_api, find_property, remove_none)
+from common.utils import (api_basic_type, fetch_api,
+                          find_property, remove_none)
 
 
 def _build_field(op_id, properties, parameters):
@@ -105,7 +106,8 @@ class ApiBase(object):
                 body, all_models, lambda n: n["name"])
 
             if not api_info.get("exclude_for_schema"):
-                _build_field(api_info["op_id"], properties, self._parameters)
+                _build_field(api_info["api_index"], properties,
+                             self._parameters)
 
             self._exe_special_cmds(api_info)
 
@@ -388,7 +390,7 @@ class ApiList(ApiBase):
 
         if self._read_api:
             _build_field(
-                self._read_api["op_id"], properties, self._parameters)
+                self._read_api["api_index"], properties, self._parameters)
 
         elif api_info.get("exclude_for_schema"):
             raise Exception("can't build field for identity of list api")
@@ -484,11 +486,11 @@ def build_resource_api_config(api_info, properties, service_type, **kwargs):
     r = ["    apis:\n"]
     read_api = fetch_api(api_info, "read")
 
-    for k, v in api_info.items():
-        t = v.get("type")
+    for _, v in api_info.items():
+        t = v["name"]
 
         obj = None
-        if not t:
+        if t not in api_basic_type():
             if v.get("when"):
                 obj = ApiAction()
             elif v.get("multi_invoke"):

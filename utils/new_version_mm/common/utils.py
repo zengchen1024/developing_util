@@ -71,6 +71,8 @@ def process_override_codes(v, indent):
 
 
 def fetch_api(api_info, name):
-    for  _, v in api_info.items():
-        if v["name"] == name:
-            return v
+    return api_info.get(name)
+
+
+def api_basic_type():
+    return ["create", "read", "update", "delete", "list"]

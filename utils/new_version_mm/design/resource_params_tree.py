@@ -66,9 +66,14 @@ def _new_name_of_path_param(api_info, params, properties):
 
 
 def _path_parameter_resource_id(apis):
+    val = [
+        fetch_api(apis, "read"),
+        fetch_api(apis, "delete"),
+        fetch_api(apis, "update"),
+    ]
     rid = []
-    for _, v in apis.items():
-        if v.get("type", "") not in ["read", "delete", "update"]:
+    for v in val:
+        if not v:
             continue
 
         path = v["api"]["path"]
