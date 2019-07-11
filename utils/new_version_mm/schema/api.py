@@ -54,6 +54,7 @@ class ApiBase(object):
     def __init__(self):
         self._name = ""
         self._index = ""
+        self._op_id = ""
         self._path = ""
         self._verb = ""
         self._parameters = None
@@ -89,6 +90,7 @@ class ApiBase(object):
 
         self._name = api_info["name"]
         self._index = api_info["api_index"]
+        self._op_id = api_info["op_id"]
         self._path = api["path"]
         self._verb = api["method"].upper()
         self._msg_prefix = api_info.get("msg_prefix")
@@ -209,6 +211,7 @@ class ApiBase(object):
             "api_key":   self._index,
             "api_type": "ApiBasic",
             "name":      self._name,
+            "operation_id": self._op_id,
             "path":      self._path,
             "verb":      self._verb,
             "async":     self._async,
