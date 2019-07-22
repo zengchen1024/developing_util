@@ -25,20 +25,13 @@ def _build_params(api_info):
         if api_info["crud"].find("c") == -1:
             n.set_item("required", None)
 
-        op = api_info["api_index"]
-
-        if n.parent is None:
-            n.path[op] = n.get_item("name")
-
-        else:
-            n.path[op] = "%s.%s" % (n.parent.path[op], n.get_item("name"))
-
     def _index_method(p):
         return p["alias"] if "alias" in p else p["name"]
 
     body = api_info.get("body")
     if body:
-        r = mm_param.build(body, api_info["all_models"], _index_method)
+        r = mm_param.build(api_info["api_index"], body,
+                           api_info["all_models"], _index_method)
         for v in r.values():
             v.traverse(_init_node)
 

@@ -7,7 +7,7 @@ from common.utils import (fetch_api, underscore)
 
 
 def _node_index(n):
-    return n.alias if n.alias else n.get_item("name")
+    return n.get_item("name")
 
 
 class _Tree(object):
@@ -70,7 +70,6 @@ class _Tree(object):
 
         # rename and add node with new index
         p.set_item("name", v[1])
-        p.alias = ""
         parent.add_child(_node_index(p), p)
 
     def default_value(self, argv):
@@ -193,9 +192,8 @@ class _Tree(object):
             "description": argv[argv.find(dt) + len(dt) + 1:].strip("\""),
             "mandatory": True
         }
-        p = mm_param.build([p], None, lambda n: n["name"], parent)[name]
-        p.path[create_api_id] = name
-
+        p = mm_param.build(create_api_id, [p], None,
+                           lambda n: n["name"], parent)[name]
         parent.add_child(_node_index(p), p)
 
 
@@ -224,9 +222,7 @@ def add_node(tree, node_info, api_info):
     if node_info["datatype"] in ("str", "int", "bool"):
         node_info.setdefault("mandatory", None)
 
-        r = mm_param.build([node_info], None, lambda n: n["name"])
-        node = r[node_info["name"]]
-
+        api_path = dict()
         for p in node_info["path"]:
             i = p.find(".")
 
@@ -247,8 +243,12 @@ def add_node(tree, node_info, api_info):
                                 "referenced by property(%s), err:%s" % (
                                     index, node_info["name"], str(ex)))
 
-            node.path[api_index] = index
+            api_path[api_index] = index
 
+        r = mm_param.build(api_path.keys()[0], [node_info], None,
+                           lambda n: n["name"])
+        node = r[node_info["name"]]
+        node.path.update(api_path)
         tree.add_child(_node_index(node), node)
 
     else:

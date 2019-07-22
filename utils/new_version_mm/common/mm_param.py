@@ -19,7 +19,6 @@ class Basic(object):
         self._mm_type = ""
         self._parent = None
         self._path = dict()
-        self._alias = ""
         self._depth = 0
 
         self._items = {
@@ -103,14 +102,6 @@ class Basic(object):
         return self._path
 
     @property
-    def alias(self):
-        return self._alias
-
-    @alias.setter
-    def alias(self, value):
-        self._alias = value
-
-    @property
     def real_type(self):
         s = self._mm_type
         return s[s.find(":") + 1:]
@@ -123,10 +114,16 @@ class Basic(object):
     def depth(self, v):
         self._depth = v
 
-    def init(self, param, parent):
+    def init(self, api_index, param, parent):
         self._parent = parent
 
-        self.set_item("name", param["name"])
+        name = param["name"]
+        if parent is None:
+            self.path[api_index] = name
+        else:
+            self.path[api_index] = "%s.%s" % (parent.path[api_index], name)
+
+        self.set_item("name", param["alias"] if "alias" in param else name)
 
         desc = param.get("description")
         if desc:
@@ -134,9 +131,6 @@ class Basic(object):
 
         if param["mandatory"]:
             self.set_item("required", True)
-
-        if "alias" in param:
-            self._alias = param["alias"]
 
         return self
 
@@ -164,7 +158,7 @@ class Basic(object):
         if self.get_item("exclude"):
             return
 
-        name = self.alias if self.alias else self.get_item("name")
+        name = self.get_item("name")
         r = [
             "%s%s:\n" % (' ' * indent, name),
             "%sdatatype: %s\n" % (' ' * (indent + 2),
@@ -310,8 +304,8 @@ class MMNameValues(Basic):
             }
         })
 
-    def init(self, param, parent):
-        super(MMNameValues, self).init(param, parent)
+    def init(self, api_index, param, parent):
+        super(MMNameValues, self).init(api_index, api_index, param, parent)
 
         m = re.match(r"dict\((.*),(.*)\)", param["datatype"])
         if not m:
@@ -358,8 +352,8 @@ class MMEnum(Basic):
             r.append("%s- :%s\n" % (' ' * indent, str(i)))
         return "".join(r)
 
-    def init(self, param, parent):
-        super(MMEnum, self).init(param, parent)
+    def init(self, api_index, param, parent):
+        super(MMEnum, self).init(api_index, param, parent)
 
         v = param.get("allowed_values")
         if v:
@@ -406,8 +400,8 @@ class MMNestedObject(Basic):
         v = self.get_item("properties")
         v.pop(key)
 
-    def init(self, param, parent, all_structs, build):
-        super(MMNestedObject, self).init(param, parent)
+    def init(self, api_index, param, parent, all_structs, build):
+        super(MMNestedObject, self).init(api_index, param, parent)
 
         self.set_item("properties",
                       build(all_structs[param["datatype"]], self))
@@ -520,8 +514,8 @@ class MMArray(Basic):
         v = self.get_item("item_type")
         v.pop(key)
 
-    def init(self, param, parent, all_structs, build):
-        super(MMArray, self).init(param, parent)
+    def init(self, api_index, param, parent, all_structs, build):
+        super(MMArray, self).init(api_index, param, parent)
 
         supported_sub_datatype = {
             "str": "Api::Type::String",
@@ -638,7 +632,7 @@ class MMArray(Basic):
         callback(self, leaf=isinstance(self_item_type, str))
 
 
-def build(struct, all_structs, index_method, parent=None):
+def build(api_index, struct, all_structs, index_method, parent=None):
 
     _mm_type_map = {
         "str": MMString,
@@ -658,16 +652,18 @@ def build(struct, all_structs, index_method, parent=None):
             datatype = p["datatype"]
 
             if datatype in _mm_type_map:
-                r[i] = _mm_type_map[datatype]().init(p, parent)
+                r[i] = _mm_type_map[datatype]().init(api_index, p, parent)
 
             elif datatype in all_structs:
-                r[i] = MMNestedObject().init(p, parent, all_structs, _build)
+                r[i] = MMNestedObject().init(
+                    api_index, p, parent, all_structs, _build)
 
             elif datatype.find("list") == 0:
-                r[i] = MMArray().init(p, parent, all_structs, _build)
+                r[i] = MMArray().init(
+                    api_index, p, parent, all_structs, _build)
 
             elif datatype.find("dict") == 0:
-                r[i] = MMNameValues().init(p, parent)
+                r[i] = MMNameValues().init(api_index, p, parent)
 
             else:
                 raise Exception("Convert to mm object failed, unknown "

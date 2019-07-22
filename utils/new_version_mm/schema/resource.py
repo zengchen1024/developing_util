@@ -56,10 +56,6 @@ def _set_output(properties):
                 p is None or p.get_item("crud") != 'r'):
             n.set_item("output", True)
 
-        if n.alias:
-            raise Exception(
-                "the alias of property(%s) is not empty" % n.get_item("name"))
-
     for v in properties.values():
         v.parent = None
         v.traverse(_output)

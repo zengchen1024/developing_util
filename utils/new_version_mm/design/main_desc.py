@@ -32,7 +32,7 @@ def run(config_file, cloud_name, tag, output):
 
 
 def _print_desc(result, buf, node):
-    name = node.alias if node.alias else node.get_item("name")
+    name = node.get_item("name")
     depth = 0
     if node.parent is not None:
         depth = node.parent.depth + 1
