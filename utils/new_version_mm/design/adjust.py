@@ -175,9 +175,8 @@ class _Tree(object):
             raise Exception("%smust input path parameter name, type[str, "
                             "bool, int] and description" % ex_msg)
 
-        parent = self
         try:
-            self._raise_if_duplicate_name(parent, v[0])
+            self._raise_if_duplicate_name(self, v[0])
         except Exception as ex:
             raise Exception("%s%s" % (ex_msg, ex))
 
@@ -193,8 +192,8 @@ class _Tree(object):
             "mandatory": True
         }
         p = mm_param.build(create_api_id, [p], None,
-                           lambda n: n["name"], parent)[name]
-        parent.add_child(_node_index(p), p)
+                           lambda n: n["name"], None)[name]
+        self.add_child(_node_index(p), p)
 
 
 def _merge_to(node2, node1, level):
